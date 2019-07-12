@@ -21,33 +21,35 @@ data_C = inner_join(Mortality_2011_C[!is.na(Mortality_2011_C$permth_int),] %>% s
 # data_C = data_C %>% t() %>% na.locf() %>% t() #autofill the missing value from the previous left row data
 
 
-#mean of signal
+# mean of signal by day
 temp = by(data_C, INDICES = data_C$SEQN, FUN = function(i){
   colMeans(i %>% select(-c(SEQN,WEEKDAY,permth_int)))
 }) %>%
   do.call(what = "rbind") #convert to data frame
 
-temp2 = data.frame(SEQN = rownames(do.call(rbind,temp)) %>% as.integer(), do.call(rbind,temp))
+temp2 = data.frame(SEQN = rownames(temp) %>% as.integer(), temp)
+# save(temp2,file = "mean.rda")
+
+# added mortality
 temp3 = left_join(unique(data_C[,c("SEQN","permth_int")]),temp2,by = "SEQN") %>% na.omit()
 
-# signal and mortality
+# added health info
 temp4 = Covariate_C %>% select(SEQN,WTMEC2YR,RIDAGEYR,BMI,BMI_cat, Race, Gender,
                        Diabetes,CHF,CHD,Cancer,Stroke,MobilityProblem,DrinkStatus,DrinksPerWeek,SmokeCigs) %>%
   na.omit()
 
-# health info
+# complete info
 temp5 = left_join(temp4,temp3,by = "SEQN") %>% na.omit() %>% as.data.frame() %>% 
   filter(Stroke != "Don't know")
+
 #convert factor to numeric
-temp5 = apply(temp5,MARGIN = 2,FUN = function(i){
-  as.numeric(as.factor(i))
-})
-
-#final dataframe
-temp6 = temp5  %>% as.data.frame() %>% select(-c(SEQN,permth_int))
+temp6 = lapply(temp5,FUN = function(i){
+  if(class(i) == "factor"){as.numeric(as.factor(i))} else{return(i)}
+}) %>% do.call(what = "cbind")
 
 
-pca_C = prcomp(temp6,scale. = T)
+
+pca_C = prcomp(temp6 %>% as.data.frame %>% select(-c(SEQN,permth_int)),scale. = T)
 
 
 # screeplot(pca_C)
@@ -59,6 +61,8 @@ fviz_screeplot(pca_C,addlabels = TRUE)
 # prediction
 y = data.frame(permth_int = as.integer(temp5[,"permth_int"]/12) %>% as.factor(),
                pca_C$x)
+# y = data.frame(permth_int = as.integer(temp5[,"permth_int"]/12) %>% as.factor(),
+#                temp5 %>% select(-SEQN,-permth_int))
 trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
 traindata = y[trainIdx,]
 testdata = y[!trainIdx,]
