@@ -80,9 +80,13 @@ y = data.frame(permth_int = as.integer(temp[,"permth_int"]/12) %>% as.factor(),
 # 8   2   8   5   9  10  13  11 247 224   1
 # 9   0   0   1   0   0   0   0   4   6   0
 
+
+# "Accuracy 0.381369426751592"
+
 }
 
-# all data including health info 
+# all data including health info, pred based on PC scores
+
 y = data.frame(permth_int = as.integer(temp3[,"permth_int"]/12) %>% as.factor(),
                pca_C$x)
 
@@ -99,6 +103,8 @@ y = data.frame(permth_int = as.integer(temp3[,"permth_int"]/12) %>% as.factor(),
 # 7   1   6   5   1   8   5   1 212 209   0
 # 8   2   6   3   3   7   5   5 220 228   0
 
+# ACC 0.4271938
+
 set.seed(100)
 trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
 traindata = y[trainIdx,]
@@ -110,14 +116,15 @@ model = train(permth_int ~ ., data = traindata,
 pred = predict(model,testdata)
 results = data.frame(test = testdata$permth_int, prediction = pred)
 table(testdata$permth_int,pred)
-print(paste('Accuracy',table(results$test == results$prediction)["TRUE"]/length(results$test)))
+print(paste('Accuracy',sum(diag(table(testdata$permth_int,pred)))/sum(table(testdata$permth_int,pred))))
+# print(paste('Accuracy',table(results$test == results$prediction)["TRUE"]/length(results$test)))
 
 
 
 
 # just temp2 i.e. raw data
 y = data.frame(permth_int = as.integer(temp2$permth_int/12) %>% as.factor(), temp2 %>% select(-permth_int))
-# > table(testdata$permth_int,pred)
+# table(testdata$permth_int,pred)
 # pred
 #     0   1   2   3   4   5   6   7   8   9
 # 0   0   1   0   0   0   0   0   6   3   0
