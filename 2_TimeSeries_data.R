@@ -19,8 +19,10 @@ MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * 
 # week level data
 MINnames = colnames(MINdata)[3:dim(MINdata)[2]]
 WEEKdata = split(MINdata,MINdata$SEQN) %>% lapply(FUN = function(i){
-    rsums = rowSums(i[,MINnames])
-    data.frame(i[,1:2],WEEKlength = length(i[,"WEEKDAY"]),WEEKstats = rsums)
+    WEEKstats = apply(i[,MINnames],1,function(r){
+      sum(r)
+    })
+    data.frame(i[,1:2],WEEKlength = length(i[,"WEEKDAY"]),WEEKstats = WEEKstats)
   # WEEKmean = rowSums(i[,MINnames])/length(MINnames)
   # data.frame(SEQN = unique(i[,"SEQN"]),
   #            WeekLengths = length(rownames(i)),
@@ -40,6 +42,11 @@ WEEKdata2 = inner_join(data.frame(SEQN = Mortality_2011_C$SEQN,
                                   permth = Mortality_2011_C$permth_int %/% 12),
                        WEEKdata2,
                        by = "SEQN")
+
+
+
+
+
 WEEKdata2$permth = as.factor(WEEKdata2$permth)
 colnames(WEEKdata2) = c("SEQN","permth","WEEKlength","Week1","Week2","Week3","Week4","Week5","Week6","Week7" )
 y = WEEKdata2 %>% na.omit() %>%
