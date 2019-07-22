@@ -48,8 +48,7 @@ healthinfo = Covariate_C %>% select(SEQN,WTMEC2YR,RIDAGEYR,BMI,BMI_cat, Race, Ge
                        Diabetes,CHF,CHD,Cancer,Stroke,MobilityProblem,DrinkStatus,DrinksPerWeek,SmokeCigs) %>%
   na.omit()
 
-temp2 = left_join(healthinfo,temp,by = "SEQN") %>% na.omit() %>% as.data.frame() %>% 
-  filter(Stroke != "Don't know")
+temp2 = left_join(healthinfo,temp,by = "SEQN") %>% na.omit() %>% as.data.frame() 
 
 #convert factor(categorical variable BMI_cat etc.) to numeric for PCA
 temp3 = lapply(temp2,FUN = function(i){
