@@ -24,6 +24,14 @@ data_C = inner_join(Mortality_2011_C[!is.na(Mortality_2011_C$permth_int),] %>% s
                     accel_good_C[,grep(c("SEQN|WEEKDAY|MIN"),colnames(accel_good_C))],
                     by = "SEQN") %>% na.omit()
 
+
+
+WEEKind = data_C %>% group_by(SEQN) %>% summarise(WEEKlength = n()) %>% filter(WEEKlength==7)
+WEEKind = WEEKind$SEQN
+
+
+
+
 # library(zoo)
 # data_C = data_C %>% t() %>% na.locf() %>% t() #autofill the missing value from the previous left row data
 
@@ -51,9 +59,9 @@ healthinfo = Covariate_C %>% select(SEQN,WTMEC2YR,RIDAGEYR,BMI,BMI_cat, Race, Ge
 temp2 = left_join(healthinfo,temp,by = "SEQN") %>% na.omit() %>% as.data.frame() 
 
 #convert factor(categorical variable BMI_cat etc.) to numeric for PCA
-temp3 = lapply(temp2,FUN = function(i){
-  if(class(i) == "factor"){as.numeric(as.factor(i))} else{return(i)}
-}) %>% do.call(what = "cbind")
+temp3 = apply(temp2,MARGIN = 2,FUN = function(i){
+  if(class(i) == "factor"| class(i) == "character"){as.numeric(as.factor(i))} else{return(i)}
+})
 
 
 
