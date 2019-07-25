@@ -38,7 +38,7 @@ MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * 
 
 HOURdata = MINdata %>% select(-c(SEQN,WEEKDAY)) %>% 
   apply(MARGIN = 1, FUN = function(i){
-  colSums(matrix(i, nrow = 60)) # hour-level
+  colSums(matrix(i, nrow = 180)) # hour-level
 }) %>% t() 
 HOURdata = data.frame(MINdata[,1:2],HOURdata) 
 HOURdata = HOURdata %>% group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame()# 7 weeks
