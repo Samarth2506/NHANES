@@ -6,7 +6,8 @@ if(T){
   library(data.table)
   library(randomForest)
 }
-
+# The monitors were programmed to begin recording activity information for successive 1 minute intervals (epochs) beginning at 
+# 12:01 a.m. the day after the health examination.
 ########################################################################
 # data preprocess/ get valid data
 ########################################################################
@@ -15,11 +16,46 @@ keep_inx <- exclude_accel(act = PAXINTEN_C, flags = Flags_C)
 accel_good_C <- PAXINTEN_C[keep_inx,] %>% na.omit()
 flags_good_C <- Flags_C[keep_inx,] %>% na.omit()
 
+
+
+
+complete_ind = MINdata %>% group_by(SEQN) %>% 
+  summarise(weeklength = n()) %>% as.data.frame() %>%
+  filter(weeklength == 7) %>% select(SEQN)
+
+
+
 # ranges of SDDSRVYR are 3 3 in all data frame we use i.e. 2003-2004 wave
 # sum(accel_good_C[,1:5] != flags_good_C[,1:5]) = 0 
 # non-wearable and wearble
 MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
   select(-c(PAXCAL,PAXSTAT,SDDSRVYR))
+
+HOURdata = MINdata %>% select(-c(SEQN,WEEKDAY)) %>% 
+  apply(MARGIN = 1, FUN = function(i){
+  colSums(matrix(i, nrow = 60))
+}) %>% t() 
+HOURdata = data.frame(MINdata[,1:2],HOURdata) 
+HOURdata = HOURdata %>% group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame()# 7 weeks
+
+HOURdata2 = left_join(HOURdata,Covariate_C,by = "SEQN") %>% 
+  inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN")
+########################################################################
+  # rfImpute()
+########################################################################
+
+y = HOURdata2 %>% select(-SEQN,-WEEKDAY) %>% na.omit()
+y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) factor(x) else x)) 
+
+# y.imputed = rfImpute(permth ~ ., data = y,iter = 20)
+fit = randomForest(permth ~ ., data = y,ntree = 500,
+                   importance = T)
+varImpPlot(fit)
+
+
+
+
+
 
 # week level data
 MINnames = colnames(MINdata)[3:dim(MINdata)[2]]
