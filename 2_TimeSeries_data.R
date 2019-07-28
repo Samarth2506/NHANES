@@ -34,16 +34,102 @@ complete_ind = MINdata %>% group_by(SEQN) %>%
 
 
 MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
-  select(-c(PAXCAL,PAXSTAT,SDDSRVYR))
+  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
+  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() # complete 7 days
 
+mortality_good_C = Mortality_2011_C %>% filter(eligstat == 1,mortstat == 1) %>% 
+  mutate(permth = permth_int %/% 12) %>% 
+  select(SEQN,causeavl,ucod_leading,diabetes_mcod,hyperten_mcod,permth)
+
+# just acctivity
+MINdata = MINdata %>% inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN")
+# covariate included
+MINdata = MINdata %>% inner_join(Covariate_C,by = "SEQN") %>% inner_join(mortality_good_C,by = "SEQN")
+MINdata = MINdata[,-grep("mortsrce",colnames(MINdata))]  %>% na.omit() %>% select(-c(permth_exm,permth_int))
+MINdata <- as.data.frame(lapply(MINdata, function (x) if (is.factor(x)) factor(x) else x)) 
+
+y = MINdata$permth %>% as.matrix()
+x = MINdata %>% select(-permth,-SEQN,-WEEKDAY) %>% as.matrix()
+
+set.seed(100)
+trainIdx = sample(c(TRUE, FALSE), dim(x)[1], replace = TRUE, prob = c(.7, .3))
+
+ytrain = y[trainIdx, ]
+xtrain = x[trainIdx, ] %>% scale()
+
+mns = attr(xtrain, "scaled:center")
+sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx, ] 
+
+ytrain <- to_categorical(ytrain, 10)
+ytest <- to_categorical(ytest, 10)
+
+
+model <- keras_model_sequential() 
+model %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(1440)) %>% 
+  layer_dropout(rate = 0.4) %>% 
+  layer_dense(units = 128, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 10, activation = 'softmax')
+
+model %>% compile(
+  loss = 'categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+
+history <- model %>% fit(
+  xtrain, ytrain, 
+  epochs = 30, batch_size = 128, 
+  validation_split = 0.2
+)
+
+plot(history)
+
+model %>% evaluate(xtest, ytest)
+
+model %>% predict_classes(xtest)
+
+# ptab = table(model %>% predict_classes(xtest),
+#              ytest)
+# ptab
+# sum(diag(ptab)) / sum(ptab)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################################################################################################
 t = 60
 if(T){
-HOURdata = MINdata %>% select(-c(SEQN,WEEKDAY)) %>% 
+HOURdata = MINData %>% select(-c(SEQN,WEEKDAY)) %>% 
   apply(MARGIN = 1, FUN = function(i){
   colSums(matrix(i, nrow = t)) # hour-level
 }) %>% t() 
 HOURdata = data.frame(MINdata[,1:2],HOURdata) 
-HOURdata = HOURdata %>% group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame()# 7 weeks
+HOURdata = HOURdata %>% group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame()# 7 days
 HOURdata = split(HOURdata,HOURdata$SEQN) %>% lapply(FUN = function(i){
   colMeans(i[,grep("X",colnames(i))])
 }) %>% do.call(what = "rbind")
@@ -64,13 +150,7 @@ varImpPlot(fit)
 }
 
 
-
-
-
-# week level data
 MINnames = colnames(MINdata)[3:dim(MINdata)[2]]
-# WEEKdata = MINdata %>% group_by(SEQN,WEEKDAY) %>%
-#   summarise()
 
 WEEKdata = split(MINdata,MINdata$SEQN) %>% lapply(FUN = function(i){
     WEEKstats = apply(i[,MINnames],1,function(r){
@@ -143,7 +223,7 @@ y = dataset  %>% select(-SEQN)
   # filter(WEEKDAY != 7)
 # from RF results
 
-# level 9 sometimes not included
+# relevel - level 9 sometimes not included
 
 
 view(y[1:10,1440:1470])
