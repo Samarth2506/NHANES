@@ -36,27 +36,32 @@ complete_ind = MINdata %>% group_by(SEQN) %>%
 MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
   select(-c(PAXCAL,PAXSTAT,SDDSRVYR))
 
+t = 60
+if(T){
 HOURdata = MINdata %>% select(-c(SEQN,WEEKDAY)) %>% 
   apply(MARGIN = 1, FUN = function(i){
-  colSums(matrix(i, nrow = 180)) # hour-level
+  colSums(matrix(i, nrow = t)) # hour-level
 }) %>% t() 
 HOURdata = data.frame(MINdata[,1:2],HOURdata) 
 HOURdata = HOURdata %>% group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame()# 7 weeks
-
+HOURdata = split(HOURdata,HOURdata$SEQN) %>% lapply(FUN = function(i){
+  colMeans(i[,grep("X",colnames(i))])
+}) %>% do.call(what = "rbind")
+HOURdata = data.frame(SEQN = as.integer(rownames(HOURdata)),HOURdata)
 HOURdata2 = left_join(HOURdata,Covariate_C,by = "SEQN") %>% 
   inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN")
 ########################################################################
   # rfImpute()
 ########################################################################
 
-y = HOURdata2 %>% select(-SEQN,-WEEKDAY) %>% na.omit()
+y = HOURdata2 %>% select(-SEQN) %>% na.omit()
 y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) factor(x) else x)) 
 
 # y.imputed = rfImpute(permth ~ ., data = y,iter = 20)
-fit = randomForest(permth ~ ., data = y,ntree = 500,
+fit = randomForest(permth ~ ., data = y,ntree = 4000,
                    importance = T)
 varImpPlot(fit)
-
+}
 
 
 
