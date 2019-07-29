@@ -5,6 +5,7 @@ if(T){
   library(magrittr)
   library(data.table)
   library(randomForest)
+  library(caret)
 }
 # The monitors were programmed to begin recording activity information for successive 1 minute intervals (epochs) beginning at 
 # 12:01 a.m. the day after the health examination.
@@ -24,6 +25,13 @@ complete_ind = MINdata %>% group_by(SEQN) %>%
   filter(weeklength == 7) %>% select(SEQN)
 
 
+mortality_good_C = Mortality_2011_C %>% filter(eligstat == 1,mortstat == 1) %>% 
+  mutate(permth = (permth_int %/% 12) %>% as.factor()) %>% 
+  select(SEQN,causeavl,ucod_leading,diabetes_mcod,hyperten_mcod,permth)
+
+covariate_good_C = Covariate_C %>% select(SEQN,SDMVPSU,SDMVSTRA,WTINT2YR,WTMEC2YR,RIDAGEYR,
+                                          BMI,BMI_cat,Race,Gender,Diabetes,CHF,CHD,Cancer,
+                                          Stroke,EducationAdult,MobilityProblem,DrinkStatus,DrinksPerWeek,SmokeCigs)
 
 # ranges of SDDSRVYR are 3 3 in all data frame we use i.e. 2003-2004 wave
 # sum(accel_good_C[,1:5] != flags_good_C[,1:5]) = 0 
@@ -33,46 +41,87 @@ complete_ind = MINdata %>% group_by(SEQN) %>%
 # lines(x=1:1434,y = MINdata[1,6:1439],col = "red")
 
 
+
+# raw
+if(F){
+MINdata = accel_good_C %>% 
+  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
+  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() %>% select(-WEEKDAY)# complete 7 days
+}
+
+# dot multiply matrix between accel and flags
 MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
-  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() # complete 7 days
+  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() %>% select(-WEEKDAY) %>% # complete 7 days
+  group_by(SEQN) %>% 
+  summarise_all(funs(sum)) %>% as.data.frame()  # sum up over days
 
-mortality_good_C = Mortality_2011_C %>% filter(eligstat == 1,mortstat == 1) %>% 
-  mutate(permth = permth_int %/% 12) %>% 
-  select(SEQN,causeavl,ucod_leading,diabetes_mcod,hyperten_mcod,permth)
+if(F){
+MINdata = data.frame(
+  SEQN = MINdata$SEQN,
+  apply(MINdata[,-1], MARGIN = 1, function(i) i/sum(i)) %>% t()
+) # compositional data
+}
+
+
+MINdata[1:10,1:10]
+MINdata[1:5,(dim(MINdata)[2]-20):dim(MINdata)[2]]
 
 # just acctivity
-MINdata = MINdata %>% inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN")
-# covariate included
-MINdata = MINdata %>% inner_join(Covariate_C,by = "SEQN") %>% inner_join(mortality_good_C,by = "SEQN")
-MINdata = MINdata[,-grep("mortsrce",colnames(MINdata))]  %>% na.omit() %>% select(-c(permth_exm,permth_int))
-MINdata <- as.data.frame(lapply(MINdata, function (x) if (is.factor(x)) factor(x) else x)) 
+if(F){
+analyticData = MINdata %>%
+  inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN")
 
-y = MINdata$permth %>% as.matrix()
-x = MINdata %>% select(-permth,-SEQN,-WEEKDAY) %>% as.matrix()
+}
+
+# covariate included
+analyticData = MINdata %>% 
+  inner_join(covariate_good_C, by = "SEQN") %>% 
+  inner_join(mortality_good_C, by = "SEQN")
+
+# manually encode character-levels factor
+analyticData <- as.data.frame(lapply(analyticData, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x)) 
+analyticData <- as.data.frame(lapply(analyticData, function (x) if (is.factor(x)) unclass(x) %>% as.numeric() else x)) 
+analyticData = analyticData %>% na.omit()
+
+
+analyticData[1:10,1:10]
+analyticData[1:5,(dim(analyticData)[2]-20):dim(analyticData)[2]]
+
+# MINdata.imputed = rfImpute(permth ~ . ,data = MINdata,iter = 6)
+# MINdata2 <- as.data.frame(lapply(MINdata, function (x) if (is.character(x)) {as.numeric(as.character(x))} else x))
+
+
+
+################################################################################################################################################
+# DL
+
+y = analyticData$permth%>% as.matrix()
+x = analyticData %>% select(-permth,-SEQN) %>% as.matrix()
+
 
 set.seed(100)
 trainIdx = sample(c(TRUE, FALSE), dim(x)[1], replace = TRUE, prob = c(.7, .3))
-
 ytrain = y[trainIdx, ]
 xtrain = x[trainIdx, ] %>% scale()
 
 mns = attr(xtrain, "scaled:center")
 sds = attr(xtrain, "scaled:scale")
 
-xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
-ytest = y[!trainIdx, ] 
+xtest = x[!trainIdx, ]  %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx, ]
 
 ytrain <- to_categorical(ytrain, 10)
 ytest <- to_categorical(ytest, 10)
 
 
-model <- keras_model_sequential() 
-model %>% 
-  layer_dense(units = 256, activation = 'relu', input_shape = c(1440)) %>% 
+model <- keras_model_sequential() %>% 
+  layer_dense(units = 2^10, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
   layer_dropout(rate = 0.4) %>% 
-  layer_dense(units = 128, activation = 'relu') %>%
+  layer_dense(units = 2^5, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
+  # layer_dense(units = 2^5, activation = 'relu') %>%
+  # layer_dropout(rate = 0.2) %>%
   layer_dense(units = 10, activation = 'softmax')
 
 model %>% compile(
@@ -83,7 +132,8 @@ model %>% compile(
 
 history <- model %>% fit(
   xtrain, ytrain, 
-  epochs = 30, batch_size = 128, 
+  epochs = 30, 
+  batch_size = 128,
   validation_split = 0.2
 )
 
@@ -99,19 +149,131 @@ model %>% predict_classes(xtest)
 # sum(diag(ptab)) / sum(ptab)
 
 
+################################################################################################################################################
+# ML
 
 
+y = analyticData %>% na.omit() %>% select(-SEQN)
+y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x)) 
+y[1:10,1440:1460]
+
+set.seed(100)
+trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
+traindata = y[trainIdx,]
+testdata = y[!trainIdx,]
+
+traindata$permth <- factor(traindata$permth) %>% droplevels()
+testdata$permth <- factor(testdata$permth) %>% droplevels()
+
+model = train(permth ~ ., data = traindata,
+              method = "svmLinear")
+
+pred = model %>% predict(testdata)
+ptab = table(testdata$permth,pred)
+print(paste('Accuracy',sum(diag(ptab))/sum(ptab)))
+
+# svmLinear [1] "Accuracy 0.126984126984127"
+# ordinalRF [1] "Accuracy 0.111111111111111"
 
 
+################################################################################################################################################
+# PCA
+
+# dot multiply matrix between accel and flags
+MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
+  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
+  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() %>% select(-WEEKDAY) %>% # complete 7 days
+  group_by(SEQN) %>% 
+  summarise_all(funs(sum)) %>% as.data.frame()  # sum up over days
+analyticData = MINdata %>% 
+  inner_join(covariate_good_C, by = "SEQN") %>% 
+  inner_join(mortality_good_C, by = "SEQN") 
+
+# manually encode character-levels factor
+analyticData <- as.data.frame(lapply(analyticData, function (x) if (is.factor(x)) unclass(x) %>% as.numeric() else x)) 
+analyticData = analyticData %>% na.omit()
+
+analyticData[1:10,1:10]
+analyticData[1:5,(dim(analyticData)[2]-20):dim(analyticData)[2]]
+
+plot(prcomp(analyticData %>% select(-SEQN,-permth)))
+
+analyticData2 = prcomp(analyticData %>% select(-SEQN,-permth))$x %>% as.data.frame() %>%
+  mutate(permth = analyticData$permth %>% as.factor())
+analyticData2[1:5,1:5]
+analyticData2[1:5,200:204]
 
 
+if(T){
+  y = analyticData2$permth %>% as.matrix()
+  x = analyticData2 %>% select(-permth) %>% as.matrix()
+  
+  
+  set.seed(100)
+  trainIdx = sample(c(TRUE, FALSE), dim(x)[1], replace = TRUE, prob = c(.7, .3))
+  ytrain = y[trainIdx, ]
+  xtrain = x[trainIdx, ] 
+  # %>% scale()
+  
+  mns = attr(xtrain, "scaled:center")
+  sds = attr(xtrain, "scaled:scale")
+  
+  xtest = x[!trainIdx, ]  
+  # %>% scale(center = mns, scale = sds)
+  ytest = y[!trainIdx, ] 
+  
+  ytrain <- to_categorical(ytrain, 10)
+  ytest <- to_categorical(ytest, 10)
+  
+  
+  model <- keras_model_sequential() %>% 
+    layer_dense(units = 2^10, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
+    layer_dropout(rate = 0.4) %>% 
+    layer_dense(units = 2^5, activation = 'relu') %>%
+    layer_dropout(rate = 0.3) %>%
+    layer_dense(units = 10, activation = 'softmax')
+  
+  model %>% compile(
+    loss = 'categorical_crossentropy',
+    optimizer = optimizer_rmsprop(),
+    metrics = c('accuracy')
+  )
+  
+  history <- model %>% fit(
+    xtrain, ytrain, 
+    epochs = 30, 
+    batch_size = 128,
+    validation_split = 0.2
+  )
+  
+  plot(history)
+  
+  model %>% evaluate(xtest, ytest)
+  
+  model %>% predict_classes(xtest)
+  
+}
 
-
-
-
-
-
-
+if(T){
+  y = analyticData2 %>% na.omit()
+  y[1:5,1:5]
+  y[1:5,200:204]
+  set.seed(100)
+  trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
+  traindata = y[trainIdx,]
+  testdata = y[!trainIdx,]
+  
+  traindata$permth <- factor(traindata$permth) %>% droplevels()
+  testdata$permth <- factor(testdata$permth) %>% droplevels()
+  
+  plot(prcomp(analyticData %>% select(-SEQN,-permth)))
+  model = train(permth ~ ., data = traindata,
+                method = "svmLinear")
+  # note, choose first 3 PC resulting in lower ACC
+  pred = model %>% predict(testdata)
+  ptab = table(testdata$permth,pred)
+  print(paste('Accuracy',sum(diag(ptab))/sum(ptab)))
+}
 
 
 

@@ -58,7 +58,10 @@ healthinfo = Covariate_C %>% select(SEQN,WTMEC2YR,RIDAGEYR,BMI,BMI_cat, Race, Ge
 
 temp2 = left_join(healthinfo,temp,by = "SEQN") %>% na.omit() %>% as.data.frame() 
 
-#convert factor(categorical variable BMI_cat etc.) to numeric for PCA
+###########################################################################################################
+# some prob here: how to encode / convert factor(categorical variable BMI_cat etc.) to numeric for PCA
+# unclass(y$BMI_cat) %>% as.factor()
+###########################################################################################################
 temp3 = apply(temp2,MARGIN = 2,FUN = function(i){
   if(class(i) == "factor"| class(i) == "character"){as.numeric(as.factor(i))} else{return(i)}
 })
