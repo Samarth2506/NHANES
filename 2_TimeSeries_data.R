@@ -6,6 +6,7 @@ if(T){
   library(data.table)
   library(randomForest)
   library(caret)
+  library(keras)
 }
 # The monitors were programmed to begin recording activity information for successive 1 minute intervals (epochs) beginning at 
 # 12:01 a.m. the day after the health examination.
@@ -13,48 +14,51 @@ if(T){
 # data preprocess/ get valid data
 ########################################################################
 
+################################################################################################################################################
+# preprocess
+
 keep_inx <- exclude_accel(act = PAXINTEN_C, flags = Flags_C)
 accel_good_C <- PAXINTEN_C[keep_inx,] %>% na.omit()
 flags_good_C <- Flags_C[keep_inx,] %>% na.omit()
 
 
 
+# complete 7 days
+SEQN_inx = (accel_good_C %>% group_by(SEQN) %>% 
+  filter(length(WEEKDAY) == 7)  %>% as.data.frame 
+  %>% select(SEQN) %>% unique())$SEQN
 
-complete_ind = MINdata %>% group_by(SEQN) %>% 
-  summarise(weeklength = n()) %>% as.data.frame() %>%
-  filter(weeklength == 7) %>% select(SEQN)
-
-
-mortality_good_C = Mortality_2011_C %>% filter(eligstat == 1,mortstat == 1) %>% 
-  mutate(permth = (permth_int %/% 12) %>% as.factor()) %>% 
+# mortality status
+###
+####%>% filter(eligstat == 1,mortstat == 1)
+mortality_good_C = Mortality_2011_C  %>% 
+  mutate(permth = (permth_exm %/% 12) %>% as.factor()) %>% 
   select(SEQN,causeavl,ucod_leading,diabetes_mcod,hyperten_mcod,permth)
 
-covariate_good_C = Covariate_C %>% select(SEQN,SDMVPSU,SDMVSTRA,WTINT2YR,WTMEC2YR,RIDAGEYR,
+#SDMVPSU,SDMVSTRA,WTINT2YR,WTMEC2YR,
+covariate_good_C = Covariate_C %>% select(SEQN,RIDAGEYR,
                                           BMI,BMI_cat,Race,Gender,Diabetes,CHF,CHD,Cancer,
                                           Stroke,EducationAdult,MobilityProblem,DrinkStatus,DrinksPerWeek,SmokeCigs)
-
-# ranges of SDDSRVYR are 3 3 in all data frame we use i.e. 2003-2004 wave
-# sum(accel_good_C[,1:5] != flags_good_C[,1:5]) = 0 
-# non-wearable and wearble
-
-# plot(y = accel_good_C[1,6:1439],x = 1:1434,type = "l")
-# lines(x=1:1434,y = MINdata[1,6:1439],col = "red")
+########################## Some code
+# Sum up over days
 
 
 
-# raw
-if(F){
-MINdata = accel_good_C %>% 
+MINdata.raw = accel_good_C %>% 
+  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) 
+MINdata.sum = accel_good_C %>% 
+  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% filter(SEQN %in% SEQN_inx) %>% # complete 7 days
+  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(sum)) %>% as.data.frame()
+# MINdata.mean = accel_good_C %>% 
+#   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>%
+#   select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(mean)) %>% as.data.frame()
+
+
+MINdata.flags = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
-  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() %>% select(-WEEKDAY)# complete 7 days
-}
+  filter(SEQN %in% SEQN_inx) %>% as.data.frame() %>% 
+  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(sum)) %>% as.data.frame()
 
-# dot multiply matrix between accel and flags
-MINdata = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
-  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
-  group_by(SEQN) %>% filter(length(WEEKDAY) == 7) %>% as.data.frame() %>% select(-WEEKDAY) %>% # complete 7 days
-  group_by(SEQN) %>% 
-  summarise_all(funs(sum)) %>% as.data.frame()  # sum up over days
 
 if(F){
 MINdata = data.frame(
@@ -64,18 +68,15 @@ MINdata = data.frame(
 }
 
 
-MINdata[1:10,1:10]
-MINdata[1:5,(dim(MINdata)[2]-20):dim(MINdata)[2]]
+# just accitivity
+analyticData = MINdata.flags %>%
+  inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN") %>%
+  inner_join(covariate_good_C %>% select(SEQN,RIDAGEYR),by = "SEQN")
 
-# just acctivity
-if(F){
-analyticData = MINdata %>%
-  inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN")
 
-}
 
 # covariate included
-analyticData = MINdata %>% 
+analyticData = MINdata.flags %>% 
   inner_join(covariate_good_C, by = "SEQN") %>% 
   inner_join(mortality_good_C, by = "SEQN")
 
@@ -88,10 +89,11 @@ analyticData = analyticData %>% na.omit()
 analyticData[1:10,1:10]
 analyticData[1:5,(dim(analyticData)[2]-20):dim(analyticData)[2]]
 
-# MINdata.imputed = rfImpute(permth ~ . ,data = MINdata,iter = 6)
-# MINdata2 <- as.data.frame(lapply(MINdata, function (x) if (is.character(x)) {as.numeric(as.character(x))} else x))
-
-
+################################################################################################################################################
+# For NA in permth_exm
+# We need to add a new category representing patient not dying within 10 years
+################################################################################################################################################
+# analyticData.imputed = rfImpute(permth ~. , data = analyticData,iter = 10)
 
 ################################################################################################################################################
 # DL
@@ -116,12 +118,10 @@ ytest <- to_categorical(ytest, 10)
 
 
 model <- keras_model_sequential() %>% 
-  layer_dense(units = 2^10, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
   layer_dropout(rate = 0.4) %>% 
-  layer_dense(units = 2^5, activation = 'relu') %>%
+  layer_dense(units = 128, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
-  # layer_dense(units = 2^5, activation = 'relu') %>%
-  # layer_dropout(rate = 0.2) %>%
   layer_dense(units = 10, activation = 'softmax')
 
 model %>% compile(
@@ -153,20 +153,23 @@ model %>% predict_classes(xtest)
 # ML
 
 
-y = analyticData %>% na.omit() %>% select(-SEQN)
+y = analyticData %>% select(-SEQN)
 y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x)) 
-y[1:10,1440:1460]
+y[1:5,1:5]
 
 set.seed(100)
 trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
 traindata = y[trainIdx,]
 testdata = y[!trainIdx,]
 
+
 traindata$permth <- factor(traindata$permth) %>% droplevels()
 testdata$permth <- factor(testdata$permth) %>% droplevels()
 
 model = train(permth ~ ., data = traindata,
               method = "svmLinear")
+
+# random forest
 
 pred = model %>% predict(testdata)
 ptab = table(testdata$permth,pred)
@@ -196,7 +199,7 @@ analyticData = analyticData %>% na.omit()
 analyticData[1:10,1:10]
 analyticData[1:5,(dim(analyticData)[2]-20):dim(analyticData)[2]]
 
-plot(prcomp(analyticData %>% select(-SEQN,-permth)))
+screeplot(prcomp(analyticData %>% select(-SEQN,-permth)))
 
 analyticData2 = prcomp(analyticData %>% select(-SEQN,-permth))$x %>% as.data.frame() %>%
   mutate(permth = analyticData$permth %>% as.factor())
