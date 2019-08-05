@@ -30,10 +30,11 @@ SEQN_inx = (accel_good_C %>% group_by(SEQN) %>%
 
 # mortality status
 ###
-####%>% filter(eligstat == 1,mortstat == 1)
-mortality_good_C = Mortality_2011_C  %>% 
-  mutate(permth = (permth_exm %/% 12) %>% as.factor()) %>% 
-  select(SEQN,causeavl,ucod_leading,diabetes_mcod,hyperten_mcod,permth)
+####%>% filter(eligstat == 1,mortstat == 1) 004: Accidents (unintentional injuries) (V01-X59, Y85-Y86)
+# mortstat NA: Under age 18, not available for public release or ineligible for mortality follow-up
+mortality_good_C = Mortality_2011_C  %>% filter(mortstat != "NA") %>% 
+  # mutate(permth = (permth_exm %/% 12) %>% as.factor()) %>% 
+  select(SEQN,causeavl,ucod_leading,diabetes_mcod,hyperten_mcod,permth_exm)
 
 #SDMVPSU,SDMVSTRA,WTINT2YR,WTMEC2YR,
 covariate_good_C = Covariate_C %>% select(SEQN,RIDAGEYR,
@@ -44,11 +45,13 @@ covariate_good_C = Covariate_C %>% select(SEQN,RIDAGEYR,
 
 
 
-MINdata.raw = accel_good_C %>% 
-  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) 
-MINdata.sum = accel_good_C %>% 
-  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% filter(SEQN %in% SEQN_inx) %>% # complete 7 days
-  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(sum)) %>% as.data.frame()
+# MINdata.raw = accel_good_C %>% 
+#   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) 
+
+# MINdata.sum = accel_good_C %>% 
+#   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% filter(SEQN %in% SEQN_inx) %>% # complete 7 days
+#   select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(sum)) %>% as.data.frame()
+
 # MINdata.mean = accel_good_C %>% 
 #   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>%
 #   select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(mean)) %>% as.data.frame()
@@ -56,7 +59,7 @@ MINdata.sum = accel_good_C %>%
 
 MINdata.flags = data.frame(accel_good_C[,1:5],accel_good_C[,6:dim(accel_good_C)[2]] * flags_good_C[,6:dim(accel_good_C)[2]]) %>% 
   select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
-  filter(SEQN %in% SEQN_inx) %>% as.data.frame() %>% 
+  filter(SEQN %in% SEQN_inx) %>% as.data.frame() %>%
   select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_all(funs(sum)) %>% as.data.frame()
 
 
@@ -70,8 +73,10 @@ MINdata = data.frame(
 
 # just accitivity
 analyticData = MINdata.flags %>%
-  inner_join(mortality_good_C %>% select(SEQN,permth),by = "SEQN") %>%
-  inner_join(covariate_good_C %>% select(SEQN,RIDAGEYR),by = "SEQN")
+  inner_join(covariate_good_C %>% select(SEQN,RIDAGEYR),by = "SEQN") %>%
+  inner_join(mortality_good_C %>% select(SEQN,permth_exm),by = "SEQN") 
+
+
 
 
 
