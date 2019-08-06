@@ -11,6 +11,6 @@
 >
 > August:
 >
-> Dot multiply between mortstat and permth_exm to get target category
+> manipulate between mortstat and permth_exm to get target category
 >
 > Fourier transform time-series signal and feed into neural network
