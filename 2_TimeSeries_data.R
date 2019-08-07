@@ -103,8 +103,8 @@ analyticData[1:5,(dim(analyticData)[2]-20):dim(analyticData)[2]]
 ################################################################################################################################################
 # DL
 
-y = analyticData$permth%>% as.matrix()
-x = analyticData %>% select(-permth,-SEQN) %>% as.matrix()
+y = (analyticData$permth_exm %/% 12 )%>% as.matrix()
+x = analyticData %>% select(-permth_exm,-SEQN) %>% as.matrix()
 
 
 set.seed(100)
@@ -118,8 +118,9 @@ sds = attr(xtrain, "scaled:scale")
 xtest = x[!trainIdx, ]  %>% scale(center = mns, scale = sds)
 ytest = y[!trainIdx, ]
 
-ytrain <- to_categorical(ytrain, 10)
-ytest <- to_categorical(ytest, 10)
+n = length(unique(y))
+ytrain <- to_categorical(ytrain, n)
+ytest <- to_categorical(ytest, n)
 
 
 model <- keras_model_sequential() %>% 
@@ -127,7 +128,7 @@ model <- keras_model_sequential() %>%
   layer_dropout(rate = 0.4) %>% 
   layer_dense(units = 128, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
-  layer_dense(units = 10, activation = 'softmax')
+  layer_dense(units = n, activation = 'softmax')
 
 model %>% compile(
   loss = 'categorical_crossentropy',
