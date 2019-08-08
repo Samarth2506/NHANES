@@ -48,6 +48,33 @@ if(F){
   save(analyticData,file = "analyticData.rda")
   load(file = "analyticData.rda")
 }
+
+analyticData[1:10,1:10]
+analyticData[1:5,(dim(analyticData)[2]-15):dim(analyticData)[2]]
+##########################################################################################################################################
+# logistic: decease in 10 years or not
+# 1 for alive, 0 for deceased
+rm(list = ls())
+load(file = "analyticData.rda")
+analyticData$permth = analyticData$mortstat * analyticData$permth_exm
+analyticData$permth = ifelse(analyticData$permth %>% is.na(),1,ifelse(analyticData$permth >= 0,0,NA)) %>% as.factor()
+analyticData = analyticData %>% select(-mortstat,-permth_exm)
+
+y = analyticData
+set.seed(100)
+trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
+fit = glm(permth ~ ., family = "binomial", data = y, subset = trainIdx)
+yPred =  (predict(fit, y[!trainIdx,], type = "response") > 0.5) * 1
+
+ytest = y[!trainIdx, ]
+ptab = table(yPred, ytest[,"permth"])
+sum(diag(ptab)) / sum(ptab)
+# [1] 0.7058333
+
+
+##########################################################################################################################################
+rm(list = ls())
+load(file = "analyticData.rda")
 permth =  ((analyticData$mortstat * analyticData$permth_exm) %/% 12)
 table(permth, useNA = "ifany")
 permth[permth < 5 ] <- 0
@@ -60,16 +87,36 @@ unique(analyticData$permth)
 analyticData[1:10,1:10]
 analyticData[1:5,(dim(analyticData)[2]-15):dim(analyticData)[2]]
 
+temp = analyticData[1,] %>% select(-SEQN,-permth) %>% as.numeric() %>% fft()
+spectrum(temp)
 
-##########################################################################################################################################
+if(F){
+  xs <- seq(-2*pi,2*pi,pi/100)
+  wave.1 <- sin(3*xs)
+  wave.2 <- sin(10*xs)
+  wave.3 <- 0.5 * wave.1 + 0.25 * wave.2
+  spectrum(wave.3)
+  wave.3 %>% fft()
+}
 
-
-
-temp = analyticData[1,c(-1,-1442)] %>% as.numeric() %>% fft()
+if(F){
+  plot.frequency.spectrum <- function(X.k, xlimits=c(0,length(X.k))) {
+    plot.data  <- cbind(0:(length(X.k)-1), Mod(X.k))
+    
+    # TODO: why this scaling is necessary?
+    plot.data[2:length(X.k),2] <- 2*plot.data[2:length(X.k),2] 
+    
+    plot(plot.data, t="h", lwd=2, main="", 
+         xlab="Frequency (Hz)", ylab="Strength", 
+         xlim=xlimits, ylim=c(0,max(Mod(plot.data[,2]))))
+  }
+  
+}
+plot.frequency.spectrum(temp)
 
 
 a = apply(analyticData,1,FUN = function(i){
-  data = i[c(-1,-1441)] %>% as.numeric()
+  data = i %>% select(-SEQN,-permth) %>% as.numeric()
   fft(data)
 }) %>% t()
 
@@ -122,45 +169,4 @@ model %>% predict_classes(xtest)
 
 
 ##########################################################################################################################################
-y = analyticData$permth%>% as.matrix()
-x = analyticData %>% select(-permth,-SEQN) %>% as.matrix()
-set.seed(100)
-trainIdx = sample(c(TRUE, FALSE), dim(x)[1], replace = TRUE, prob = c(.7, .3))
-ytrain = y[trainIdx, ]
-xtrain = x[trainIdx, ] %>% scale()
 
-mns = attr(xtrain, "scaled:center")
-sds = attr(xtrain, "scaled:scale")
-
-xtest = x[!trainIdx, ]  %>% scale(center = mns, scale = sds)
-ytest = y[!trainIdx, ]
-
-ytrain <- to_categorical(ytrain,3)
-ytest <- to_categorical(ytest, 3)
-
-
-model <- keras_model_sequential() %>% 
-  layer_dense(units = 128, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
-  layer_dropout(rate = 0.4) %>% 
-  layer_dense(units = 64, activation = 'relu') %>%
-  layer_dropout(rate = 0.3) %>%
-  layer_dense(units = 3, activation = 'softmax')
-
-model %>% compile(
-  loss = 'categorical_crossentropy',
-  optimizer = optimizer_rmsprop(),
-  metrics = c('accuracy')
-)
-
-history <- model %>% fit(
-  xtrain, ytrain, 
-  epochs = 30, 
-  batch_size = 128,
-  validation_split = 0.2
-)
-
-plot(history)
-
-model %>% evaluate(xtest, ytest)
-
-model %>% predict_classes(xtest)
