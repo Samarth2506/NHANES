@@ -26,6 +26,8 @@
 > get spectrum and feed into neural network
 > Spectrum()$spec
 >
+> * High ACC but not sure if it's plausible
+>
 > **PCA**
 >
 > Raw patient data
