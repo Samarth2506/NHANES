@@ -60,36 +60,52 @@ load(file = "analyticData.rda")
 analyticData[1:10,1:10]
 analyticData[1:5,(dim(analyticData)[2]-15):dim(analyticData)[2]]
 
-permth =  ((analyticData$mortstat * analyticData$permth_exm) %/% 12)
-table(permth, useNA = "ifany")
-permth[permth < 5 ] <- 0
-permth[permth >= 5] <- 1
-permth[is.na(permth)] <- 2
-# 0 for 0~5 years, 1 for 5~10 years, 2 for alive
-analyticData$permth = permth %>% as.factor()
-analyticData = analyticData %>% select(-mortstat,-permth_exm)
-table(analyticData$permth)
-analyticData[1:10,1:10]
-analyticData[1:5,(dim(analyticData)[2]-15):dim(analyticData)[2]]
+# re-encode permth 
+if(T){
+  permth =  ((analyticData$mortstat * analyticData$permth_exm) %/% 12)
+  table(permth, useNA = "ifany")
+  permth[permth < 5 ] <- 0
+  permth[permth >= 5] <- 1
+  permth[is.na(permth)] <- 2
+  # 0 for 0~5 years, 1 for 5~10 years, 2 for alive
+  analyticData$permth = permth %>% as.factor()
+  analyticData = analyticData %>% select(-mortstat,-permth_exm)
+  table(analyticData$permth)
+  analyticData[1:10,1:10]
+  analyticData[1:5,(dim(analyticData)[2]-15):dim(analyticData)[2]]
 
+}
 
-# temp = analyticData[1,] %>% select(-SEQN,-permth) %>% as.numeric()
+# temp = analyticData[1,] %>% select(-SEQN,-permth) %>% as.numeric() %>% na.omit()
 # spectrum(temp)
+# plot(spectrum(temp),log = "no")
 # spectrum(temp)$spec
+dim( analyticData %>% select(-SEQN,-permth) )
 
-
-y1 = apply(analyticData %>% select(-SEQN,-permth) %>% na.omit, 1 ,FUN = function(i){
-  data = i  %>% as.numeric() %>% spectrum
+y1 = apply(analyticData %>% select(-SEQN,-permth) , 1 ,FUN = function(i){
+  data = i  %>% as.numeric() %>% na.omit %>% spectrum
   return(data$spec)
-}) %>% t()
+})
 
-y2 = data.frame(SEQN = analyticData %>% na.omit %>% select(SEQN),
+y1 <- data.frame(matrix(unlist(y1), nrow=length(y1), byrow=T))
+
+dim(y1)
+
+y2 = data.frame(SEQN = analyticData %>%  select(SEQN),
                  y1,
-               permth = analyticData %>% na.omit %>% select(permth))
+               permth = analyticData %>%  select(permth))
+
 y2[1:5,1:5]
 y2[1:5,(dim(y2)[2]-5):dim(y2)[2]]
 
+
+
+
+
+
+
 y = y2$permth %>% as.matrix()
+table(y)
 x = y2 %>% select(-permth,-SEQN) %>% as.matrix()
 
 
@@ -97,9 +113,14 @@ set.seed(100)
 trainIdx = sample(c(TRUE, FALSE), dim(x)[1], replace = TRUE, prob = c(.7, .3))
 
 ytrain = y[trainIdx, ]
-xtrain = x[trainIdx, ]
+xtrain = x[trainIdx, ] 
+# %>% scale()
 
-xtest = x[!trainIdx, ]
+# mns = attr(xtrain, "scaled:center")
+# sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ]  
+# %>% scale(center = mns, scale = sds)
 ytest = y[!trainIdx, ]
 
 ytrain <- to_categorical(ytrain,3)
@@ -107,9 +128,9 @@ ytest <- to_categorical(ytest, 3)
 
 
 model <- keras_model_sequential() %>% 
-  layer_dense(units = 128, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
-  layer_dropout(rate = 0.4) %>% 
-  layer_dense(units = 64, activation = 'relu') %>%
+  layer_dense(units = 2^8, activation = 'relu', input_shape = dim(xtrain)[2]) %>% 
+  layer_dropout(rate = 0.5) %>% 
+  layer_dense(units = 2^7, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
   layer_dense(units = 3, activation = 'softmax')
 
@@ -130,11 +151,9 @@ plot(history)
 
 model %>% evaluate(xtest, ytest)
 
-model %>% predict_classes(xtest)
+# model %>% predict_classes(xtest)
 
-table(ytest = y[!trainIdx, ])
-table(model %>% predict_classes(xtest))
-
+table(ytest = y[!trainIdx, ],model %>% predict_classes(xtest))
 
 
 ##########################################################################################################################################
