@@ -17,7 +17,7 @@
 >
 > ### August
 >
-> **Category target** 
+> **New dataset 2005~2006** 
 >
 > manipulate between mortstat and permth_exm to get target category
 >
@@ -26,7 +26,24 @@
 > get spectrum and feed into neural network
 > Spectrum()$spec
 >
+> 
+>
 > * High ACC but not sure if it's plausible
+>
+>   ytest    2
+>       0   88
+>       1   82
+>       2 1072
+>
+> * $loss
+>   [1] 2.206181
+>
+>   $acc
+>   [1] 0.863124
+>
+> 
+>
+> 
 >
 > **PCA**
 >
@@ -48,4 +65,13 @@
 > |      1      |     0     |  54  |
 > |      2      |     1     |  54  |
 >
+> 
+>
+> 
+>
+> 
+>
 > **Logistic regression**
+>
+> * [1] 0.7072581
+> * over-fitting problem 
