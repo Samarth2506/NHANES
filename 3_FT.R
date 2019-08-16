@@ -168,6 +168,60 @@ table(ytest = y[!trainIdx, ],model %>% predict_classes(xtest))
 
 
 ##########################################################################################################################################
+# PCA
+
+rm(list = ls())
+
+keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
+accel_good_D <- PAXINTEN_D[keep_inx,] 
+flags_good_D <- Flags_D[keep_inx,]
+
+MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] * flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
+  select(SEQN,WEEKDAY) %>% arrange(SEQN,WEEKDAY)
+  
+
+# 0: Assumed alive
+# 1: Assumed deceased
+# NA: Under age 18, not available for public release or ineligible for mortality follow-up
+
+analyticData = MINdata  %>% inner_join(Mortality_2015_D %>% select(SEQN,mortstat,permth_exm), by = "SEQN") %>% 
+  filter(mortstat != "NA")
+
+# re-encode so last row within subgroup is 1
+analyticData[!duplicated(analyticData$SEQN,fromLast=TRUE) & analyticData$mortstat == 1,"mortstat"] <- 2
+analyticData[,"mortstat"] <- ifelse(analyticData[,"mortstat"] == 1,0,ifelse(analyticData[,"mortstat"]==2, 1, 0))
+
+
+
+if(F){
+  covariate_good_D = Covariate_D %>% select(SEQN,RIDAGEYR,
+                                            BMI,BMI_cat,Race,Gender,Diabetes,CHF,CHD,Cancer,
+                                            Stroke,EducationAdult,MobilityProblem,DrinkStatus,DrinksPerWeek,SmokeCigs)
+  view(covariate_good_D)
+  y = covariate_good_D
+  y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() %>% as.numeric else x)) 
+}
+
+analyticData = analyticData %>% inner_join(Covariate_D %>% select(SEQN,RIDAGEYR,BMI),by = "SEQN") %>% na.omit()
+
+view(analyticData)
+
+# pr = prcomp(analyticData %>% select(-SEQN))
+# pr = prcomp( analyticData %>% inner_join(y,by = "SEQN") %>% na.omit() , scale. = T)
+pr = prcomp(analyticData %>% select(-SEQN),scale. = T)
+biplot(pr)
+screeplot(pr)
+library(factoextra)
+fviz_screeplot(pr,addlabels = TRUE)
+
+
+
+
+
+
+
+
+
 
 
 ##########################################################################################################################################
