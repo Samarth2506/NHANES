@@ -202,17 +202,18 @@ if(F){
   y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() %>% as.numeric else x)) 
 }
 
-analyticData = analyticData %>% inner_join(Covariate_D %>% select(SEQN,RIDAGEYR,BMI),by = "SEQN") %>% na.omit()
+analyticData = analyticData %>% inner_join(Covariate_D %>% select(SEQN,RIDAGEYR,WTMEC2YR,BMI),by = "SEQN") %>% na.omit()
 
 view(analyticData)
-
+view(Covariate_D)
 # pr = prcomp(analyticData %>% select(-SEQN))
 # pr = prcomp( analyticData %>% inner_join(y,by = "SEQN") %>% na.omit() , scale. = T)
 pr = prcomp(analyticData %>% select(-SEQN),scale. = T)
+# par(mfrow=c(2,1))
 biplot(pr)
 screeplot(pr)
-library(factoextra)
-fviz_screeplot(pr,addlabels = TRUE)
+# library(factoextra)
+# fviz_screeplot(pr,addlabels = TRUE)
 
 
 
