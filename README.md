@@ -57,14 +57,14 @@
 >
 > Re-encode to the following format and feed into PCA (add Gender/Covariate stuff)
 >
-> | patient idx | mortality | Age  |
-> | :---------: | :-------: | :--: |
-> |      1      |     0     |  65  |
-> |      2      |     0     |  65  |
-> |      3      |     0     |  65  |
-> |      4      |     0     |  65  |
-> |      1      |     0     |  54  |
-> |      2      |     1     |  54  |
+> | patient idx | time idx | mortality | Age  |
+> | :---------: | :------: | :-------: | :--: |
+> |      1      |    1     |     0     |  65  |
+> |      1      |    2     |     0     |  65  |
+> |      1      |    3     |     0     |  65  |
+> |      1      |    4     |     0     |  65  |
+> |      2      |    1     |     0     |  54  |
+> |      2      |    2     |     1     |  54  |
 >
 > 
 >
@@ -72,7 +72,7 @@
 >
 > 
 >
-> **Logistic regression**
+> **Logistic regression based on average over days**
 >
 > [1] 0.7072581
 >
@@ -80,7 +80,7 @@
 >
 > 
 >
-> **7 * 1440 to 1 * 10080 data**
+> **convert 7 * 1440 time matrix  to 1 * 10080 data**
 >
 > **10080 feed into network**
 >
