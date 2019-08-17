@@ -29,18 +29,18 @@
 >
 > 
 >
-> * High ACC but not sure if it's plausible
+> High ACC but not sure if it's plausible
 >
->   ytest    2
->       0   88
->       1   82
->       2 1072
+> ytest    2
+>    0   88
+>    1   82
+>    2 1072
 >
-> * $loss
->   [1] 2.206181
+> $loss
+> [1] 2.206181
 >
->   $acc
->   [1] 0.863124
+> $acc
+> [1] 0.863124
 >
 > 
 >
@@ -74,5 +74,49 @@
 >
 > **Logistic regression**
 >
-> * [1] 0.7072581
-> * over-fitting problem 
+> [1] 0.7072581
+>
+> over-fitting problem 
+>
+> 
+>
+> **7 * 1440 to 1 * 10080 data**
+>
+> **10080 feed into network**
+>
+> $loss
+> [1] 2.210287
+>
+> $acc
+> [1] 0.8628692
+>
+> ytest   2
+>     0  26
+>     1  39
+>     2 409
+>
+> **PCA based DL: feed in rotation**
+>
+> $loss
+> [1] 1.2907
+>
+> $acc
+> [1] 0.8605898
+>
+> ytest   0   1   2
+>     0   1   0  21
+>     1   3   2  26
+>     2   0   2 318
+>
+> **Spectrum DL**
+>
+> $loss
+> [1] 2.290239
+>
+> $acc
+> [1] 0.8579088
+>
+> ytest   2
+>     0  22
+>     1  31
+>     2 320
