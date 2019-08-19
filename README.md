@@ -1,7 +1,7 @@
 # rnhanesdata
 
-> Source  
-> https://github.com/andrew-leroux/rnhanesdata  
+> Source 
+> https://github.com/andrew-leroux/rnhanesdata 
 > https://wwwn.cdc.gov/Nchs/Nhanes/
 >
 > Timeline
@@ -32,9 +32,9 @@
 > High ACC but not sure if it's plausible
 >
 > ytest    2
->    0   88
->    1   82
->    2 1072
+> 0   88
+> 1   82
+> 2 1072
 >
 > $loss
 > [1] 2.206181
@@ -57,7 +57,7 @@
 >
 > Re-encode to the following format and feed into PCA (add Gender/Covariate stuff)
 >
-> | patient idx | time idx | mortality | Age  |
+> | patient idx | week idx | mortality | Age  |
 > | :---------: | :------: | :-------: | :--: |
 > |      1      |    1     |     0     |  65  |
 > |      1      |    2     |     0     |  65  |
@@ -80,9 +80,11 @@
 >
 > 
 >
-> **convert 7 * 1440 time matrix  to 1 * 10080 data**
+> **convert 7 * 1440 matrix  to 1 * 10080 data**
 >
-> **10080 feed into network**
+> **note its 7 days complete data**
+>
+> **feed10080 into network**
 >
 > $loss
 > [1] 2.210287
@@ -91,9 +93,9 @@
 > [1] 0.8628692
 >
 > ytest   2
->     0  26
->     1  39
->     2 409
+>  0  26
+>  1  39
+>  2 409
 >
 > **PCA based DL: feed in rotation**
 >
@@ -104,9 +106,9 @@
 > [1] 0.8605898
 >
 > ytest   0   1   2
->     0   1   0  21
->     1   3   2  26
->     2   0   2 318
+>  0   1   0  21
+>  1   3   2  26
+>  2   0   2 318
 >
 > **Spectrum DL**
 >
@@ -117,6 +119,6 @@
 > [1] 0.8579088
 >
 > ytest   2
->     0  22
->     1  31
->     2 320
+>  0  22
+>  1  31
+>  2 320
