@@ -22,8 +22,9 @@ flags_good_D <- Flags_D[keep_inx,]
 
 
 MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] * flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
-  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
+  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% arrange(SEQN,WEEKDAY) %>%
   reshape(idvar = "SEQN", timevar = "WEEKDAY",direction = "wide") %>% na.omit()
+
 
 analyticData = MINdata  %>% inner_join(Mortality_2015_D %>% select(SEQN,mortstat,permth_exm), by = "SEQN") %>% 
   filter(mortstat != "NA") %>%
@@ -137,6 +138,7 @@ x = pca$x  %>% as.matrix()
 set.seed(1)
 trainIdx = sample(nrow(y),nrow(y)*0.75)
 
+
 ytrain = y[trainIdx, ]
 xtrain = x[trainIdx, ]
 
@@ -144,10 +146,29 @@ xtrain = x[trainIdx, ]
 xtest = x[-trainIdx, ]   
 ytest = y[-trainIdx, ]
 
+
+# resample 
+if(F){
+  set.seed(100)
+  trainIdx = c(sample(which(y==0),70),sample(which(y==1),70),sample(which(y==2),70))
+  # resample
+  ytrain = y[-trainIdx, ]
+  xtrain = x[-trainIdx, ]
+  
+  ytest = y[trainIdx, ]
+  xtest = x[trainIdx, ]
+}
+
+
+
 table(ytrain)
 table(ytest)
 ytrain <- to_categorical(ytrain,3)
 ytest <- to_categorical(ytest, 3)
+
+
+
+
 
 
 model <- keras_model_sequential() %>% 
