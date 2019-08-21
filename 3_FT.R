@@ -185,8 +185,10 @@ MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] * 
 # NA: Under age 18, not available for public release or ineligible for mortality follow-up
 
 analyticData = MINdata  %>% inner_join(Mortality_2015_D %>% select(SEQN,mortstat,permth_exm), by = "SEQN") %>% 
-  filter(mortstat != "NA")
+  filter(mortstat != "NA") %>% select(-WEEKDAY) %>% unique()
+analyticData$permth_exm = analyticData$permth_exm %/% 12
 
+analyticData = analyticData[rep(seq_len(nrow(analyticData)),analyticData$permth_exm),1:3] 
 # re-encode so last row within subgroup is 1
 analyticData[!duplicated(analyticData$SEQN,fromLast=TRUE) & analyticData$mortstat == 1,"mortstat"] <- 2
 analyticData[,"mortstat"] <- ifelse(analyticData[,"mortstat"] == 1,0,ifelse(analyticData[,"mortstat"]==2, 1, 0))
@@ -208,7 +210,9 @@ view(analyticData)
 view(Covariate_D)
 # pr = prcomp(analyticData %>% select(-SEQN))
 # pr = prcomp( analyticData %>% inner_join(y,by = "SEQN") %>% na.omit() , scale. = T)
-pr = prcomp(analyticData %>% select(-SEQN,-permth_exm),scale. = T)
+pr = prcomp(analyticData %>% select(-SEQN,-permth_exm),
+            center = T,
+            scale. = T)
 # par(mfrow=c(2,1))
 biplot(pr)
 screeplot(pr)

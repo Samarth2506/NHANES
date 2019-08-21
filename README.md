@@ -29,7 +29,7 @@
 >
 > 
 >
-> High ACC but not sure if it's plausible
+> High ACC but plausible
 >
 > ytest    2
 > 0   88
@@ -44,8 +44,6 @@
 >
 > 
 >
-> 
->
 > **PCA**
 >
 > Raw patient data
@@ -57,7 +55,7 @@
 >
 > Re-encode to the following format and feed into PCA (add Gender/Covariate stuff)
 >
-> | patient idx | week idx | mortality | Age  |
+> | patient idx | year idx | mortality | Age  |
 > | :---------: | :------: | :-------: | :--: |
 > |      1      |    1     |     0     |  65  |
 > |      1      |    2     |     0     |  65  |
@@ -68,13 +66,13 @@
 >
 > 
 >
-> 
->
-> 
->
 > **Logistic regression based on average over days**
 >
 > [1] 0.7072581
+>
+> yPred   0   1
+>   	  0  59 253
+>   	  1 110 818
 >
 > over-fitting problem 
 >
@@ -93,9 +91,9 @@
 > [1] 0.8628692
 >
 > ytest   2
->  0  26
->  1  39
->  2 409
+> 0  26
+> 1  39
+> 2 409
 >
 > **PCA based DL: feed in rotation**
 >
@@ -106,9 +104,11 @@
 > [1] 0.8605898
 >
 > ytest   0   1   2
->  0   1   0  21
->  1   3   2  26
->  2   0   2 318
+> 		0   1   0  21
+> 		1   3   2  26
+> 		2   0   2 318
+>
+> 
 >
 > **Spectrum DL**
 >
@@ -119,6 +119,14 @@
 > [1] 0.8579088
 >
 > ytest   2
->  0  22
->  1  31
->  2 320
+> 0  22
+> 1  31
+> 2 320
+>
+> **logistic regression based on PC scores**
+>
+> same prob
+>
+> didn't classify between different categories
+>
+> 
