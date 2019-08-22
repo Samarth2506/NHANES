@@ -143,4 +143,4 @@
 >
 > **pick BMI as target**
 >
-> visualization of lm in ggplot2
+> visualization of linear regression in ggplot2
