@@ -3,21 +3,20 @@
 > Source 
 > https://github.com/andrew-leroux/rnhanesdata 
 > https://wwwn.cdc.gov/Nchs/Nhanes/
+
+**Timeline**
+
+### July 
+
+> Some typical ML and DL method to predict conditional survival analysis: **Maxima of Pr(years left to live|assuming die in 10 years)** 
 >
-> Timeline
->
-> ---
->
-> ### July 
->
-> Some typical ML and DL method to predict conditional survival analysis: **Maxima of Pr(years left to live|assuming die in 10 years)** . 
+> 
 >
 > For next, add a new category representing patients not dying in 10 years in neural network: **Maxima of Pr(years left to live)**
 >
-> ---
->
-> ### August
->
+
+### August
+
 > **New dataset 2005~2006** 
 >
 > manipulate between mortstat and permth_exm to get target category
@@ -71,18 +70,18 @@
 > [1] 0.7072581
 >
 > yPred   0   1
->   	  0  59 253
->   	  1 110 818
+> 	  0  59 253
+> 	  1 110 818
 >
 > over-fitting problem 
 >
 > 
 >
-> **convert 7 * 1440 matrix  to 1 * 10080 data**
+> **convert 7 * 1440 matrix  to 1 * 10080 data note its 7 days complete data**
 >
-> **note its 7 days complete data**
+> **prob: data doesn't line up so might not work** 
 >
-> **feed10080 into network**
+> **feed 10080 into network**
 >
 > $loss
 > [1] 2.210287
@@ -123,6 +122,8 @@
 > 1  31
 > 2 320
 >
+> 
+>
 > **logistic regression based on PC scores**
 >
 > same prob
@@ -130,3 +131,16 @@
 > didn't classify between different categories
 >
 > 
+>
+> > ptab
+>
+> ​	  0    1
+> 0    0  168
+> 1    0 1072
+>
+> > sum(diag(ptab)) / sum(ptab)
+> > [1] 0.8645161
+>
+> **pick BMI as target**
+>
+> visualization of lm in ggplot2
