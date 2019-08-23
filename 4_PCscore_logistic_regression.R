@@ -10,6 +10,72 @@ if(T){
   library(tensorflow)
 }
 
+
+##########################################################################################################################################
+# logistic: decease in 10 years or not
+# 1 for alive, 0 for deceased
+
+rm(list = ls())
+load(file = "analyticData.rda")
+analyticData$permth = analyticData$mortstat * analyticData$permth_exm
+analyticData$permth = ifelse(analyticData$permth %>% is.na(),1,ifelse(analyticData$permth >= 0,0,NA)) %>% as.factor()
+analyticData = analyticData %>% select(-mortstat,-permth_exm)
+table(analyticData$permth)
+
+y = analyticData %>% select(-SEQN)
+set.seed(100)
+trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
+fit = glm(permth ~ ., family = "binomial", data = y, subset = trainIdx)
+
+yPred =  (predict(fit, y[!trainIdx,], type = "response") > 0.5) * 1
+
+ytest = y[!trainIdx, ]
+ptab = table(yPred, ytest[,"permth"])
+ptab
+sum(diag(ptab)) / sum(ptab)
+
+# [1] 0.7072581
+# over-fitting problem
+##########################################################################################################################################
+# logistic ridge regression
+# https://stackoverflow.com/questions/30565457/getting-glmnet-coefficients-at-best-lambda
+# https://stats.stackexchange.com/questions/72251/an-example-lasso-regression-using-glmnet-for-binary-outcome
+rm(list = ls())
+load(file = "analyticData.rda")
+analyticData$permth = analyticData$mortstat * analyticData$permth_exm
+analyticData$permth = ifelse(analyticData$permth %>% is.na(),1,ifelse(analyticData$permth >= 0,0,NA)) %>% as.factor()
+analyticData = analyticData %>% select(-mortstat,-permth_exm)
+table(analyticData$permth)
+
+analyticData = analyticData %>% na.omit()
+set.seed(100)
+trainIdx = sample(c(TRUE, FALSE), dim(analyticData)[1], replace = TRUE, prob = c(.7, .3))
+library(glmnet)
+y = analyticData[trainIdx,] %>% select(permth) %>% as.matrix() %>% as.numeric()
+x = analyticData[trainIdx,] %>% select(-SEQN,-permth) %>% as.matrix()
+
+fit = glmnet(x,y,family = 'binomial',
+             lambda=cv.glmnet(as.matrix(x), y)$lambda.1se)
+#lambda.1se
+
+# coef(fit)
+# plot(fit,xvar = 'lambda')
+# cv.glmmod <- cv.glmnet(x, y %>% unclass, alpha=1)
+# plot(cv.glmmod)
+yPred = ( predict(fit, newx = analyticData[!trainIdx,] %>% select(-SEQN,-permth)  %>% as.matrix(),
+                  s = 'lambda.1se',
+                  type = 'response') > 0.5) * 1
+
+ytest = analyticData[!trainIdx, ] %>% select(permth)
+ptab = table(ytest = ytest[,"permth"], ytru = factor(yPred,levels = levels(ytest[,"permth"])))
+ptab
+sum(diag(ptab)) / sum(ptab)
+
+
+
+
+##########################################################################################################################################
+# glm pc scores
 load(file = "analyticData.rda")
 analyticData = analyticData %>% select(-permth_exm)
 # NA: alive
@@ -64,7 +130,23 @@ sum(diag(ptab)) / sum(ptab)
 # > sum(diag(ptab)) / sum(ptab)
 # [1] 0.8645161
 
+##########################################################################################################################################
+# glm pc scores
+load(file = 'pcscore.rda')
+load(file = 'pca.rda')
+screeplot(pca)
+#first three PCs
+y = pcscore[,c(1:4,which(colnames(pcscore) == 'mortstat'))] %>% select(-SEQN) 
+set.seed(100)
+trainIdx = sample(nrow(y),0.7*nrow(y))
+fit = glm(mortstat ~ ., family = "binomial", data = y, subset = trainIdx)
+summary(fit)
+yPred =  (predict(fit, y[-trainIdx,], type = "response") > 0.5) * 1
 
+ytest = y[-trainIdx, ]
+ptab = table(yPred, ytest[,"mortstat"])
+ptab
+sum(diag(ptab)) / sum(ptab)
 
 
 

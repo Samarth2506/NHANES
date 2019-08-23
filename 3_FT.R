@@ -230,30 +230,8 @@ screeplot(pr)
 
 
 
-##########################################################################################################################################
-# logistic: decease in 10 years or not
-# 1 for alive, 0 for deceased
 
-rm(list = ls())
-load(file = "analyticData.rda")
-analyticData$permth = analyticData$mortstat * analyticData$permth_exm
-analyticData$permth = ifelse(analyticData$permth %>% is.na(),1,ifelse(analyticData$permth >= 0,0,NA)) %>% as.factor()
-analyticData = analyticData %>% select(-mortstat,-permth_exm)
-table(analyticData$permth)
 
-y = analyticData
-set.seed(100)
-trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))
-fit = glm(permth ~ ., family = "binomial", data = y, subset = trainIdx)
-yPred =  (predict(fit, y[!trainIdx,], type = "response") > 0.5) * 1
-
-ytest = y[!trainIdx, ]
-ptab = table(yPred, ytest[,"permth"])
-ptab
-sum(diag(ptab)) / sum(ptab)
-
-# [1] 0.7072581
-# over-fitting problem
 
 ##########################################################################################################################################
 

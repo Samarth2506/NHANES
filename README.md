@@ -30,16 +30,20 @@
 >
 > High ACC but plausible
 >
+> `0: 0~5 years 1: 5~10 years 2: alive`
+>
+> ```R
 > ytest    2
 > 0   88
 > 1   82
 > 2 1072
->
+> 
 > $loss
 > [1] 2.206181
->
+> 
 > $acc
 > [1] 0.863124
+> ```
 >
 > 
 >
@@ -67,79 +71,100 @@
 >
 > **Logistic regression based on average over days**
 >
-> [1] 0.7072581
->
+> ```R
+> > ptab
+>      
 > yPred   0   1
-> 	  0  59 253
-> 	  1 110 818
+>     0  51 245
+>     1 118 826
+> > sum(diag(ptab)) / sum(ptab)
+> [1] 0.7072581
+> ```
 >
 > over-fitting problem 
 >
+> **Logistic regression based on PC scores**
+>
+> ```R
+> > summary(fit)
 > 
->
-> **convert 7 * 1440 matrix  to 1 * 10080 data note its 7 days complete data**
->
-> **prob: data doesn't line up so might not work** 
->
-> **feed 10080 into network**
->
-> $loss
-> [1] 2.210287
->
-> $acc
-> [1] 0.8628692
->
-> ytest   2
-> 0  26
-> 1  39
-> 2 409
->
-> **PCA based DL: feed in rotation**
->
-> $loss
-> [1] 1.2907
->
-> $acc
-> [1] 0.8605898
->
-> ytest   0   1   2
-> 		0   1   0  21
-> 		1   3   2  26
-> 		2   0   2 318
->
+> Call:
+> glm(formula = mortstat ~ ., family = "binomial", data = y, subset = trainIdx)
 > 
->
-> **Spectrum DL**
->
-> $loss
-> [1] 2.290239
->
-> $acc
-> [1] 0.8579088
->
-> ytest   2
-> 0  22
-> 1  31
-> 2 320
->
+> Deviance Residuals: 
+>     Min       1Q   Median       3Q      Max  
+> -5.1519   0.1886   0.3789   0.5665   1.1851  
 > 
->
-> **logistic regression based on PC scores**
->
-> same prob
->
-> didn't classify between different categories
->
+> Coefficients:
+>              Estimate Std. Error z value Pr(>|z|)    
+> (Intercept)  2.485661   0.087662  28.355  < 2e-16 ***
+> PC1          0.094724   0.006817  13.895  < 2e-16 ***
+> PC2         -0.055732   0.010354  -5.383 7.33e-08 ***
+> PC3         -0.064101   0.009514  -6.737 1.61e-11 ***
+> ---
+> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > 
+> (Dispersion parameter for binomial family taken to be 1)
+> 
+>     Null deviance: 2236.5  on 2924  degrees of freedom
+> Residual deviance: 1921.7  on 2921  degrees of freedom
+> AIC: 1929.7
+> 
+> Number of Fisher Scoring iterations: 6
+> ```
 >
+>
+> ```R
 > > ptab
->
-> ​	  0    1
-> 0    0  168
-> 1    0 1072
->
+>      
+> yPred    0    1
+>     0    0    1
+>     1  171 1082
 > > sum(diag(ptab)) / sum(ptab)
-> > [1] 0.8645161
+> [1] 0.8628389
+> ```
+>
+> 
+>
+> 
+>
+> **logistic ridge regression**
+>
+> prevent overfitting and underfitting
+>
+> lambda.1se
+>
+> ```R
+> > ptab
+>      ytru
+> ytest    0    1
+>     0    0  168
+>     1    0 1072
+> > sum(diag(ptab)) / sum(ptab)
+> [1] 0.8645161
+> ```
+>
+> 
+>
+> lambda.min
+>
+> ```R
+> > ptab
+>      ytru
+> ytest    0    1
+>     0    0  168
+>     1    0 1072
+> > sum(diag(ptab)) / sum(ptab)
+> [1] 0.8645161
+> ```
+>
+> 
+>
+> >**convert 7 * 1440 matrix  to 1 * 10080 data note its 7 days complete data**
+> >
+> >**prob: data doesn't line up so might not work** 
+>
+> 
 >
 > **pick BMI as target**
 >
