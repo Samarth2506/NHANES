@@ -29,21 +29,22 @@ set.seed(100)
 BMI = y$BMI 
 y = y %>% select(-BMI)
 trainIdx = sample(nrow(y),0.7*nrow(y))
-fit = lm( log(BMI+1) ~  ., data = y, subset = trainIdx)
+# trainIdx = sample(c(T,F),dim(y)[1],c(0.7,0.3),replace = T)
+fit = lm( y$`log(BMI+1)` ~  ., data = y, subset = trainIdx)
 # summary(fit)
-
 yPred = exp(predict(fit,y[-trainIdx,]))-1
 result = cbind(yPred,yTrue = BMI[-trainIdx]) %>% na.omit() %>% as.data.frame()
 
 library(dvmisc)
 get_mse(fit)
-
-
+mean(
+  apply(result,MARGIN = 1,FUN = function(i){abs(i[1]-i[2])<=5})
+)
+mean((result[,1]-result[,2])^2)
 
 library(ggplot2)
 ggplot(data=result , aes(x = 1:dim(result)[1])) + geom_line(aes(y = yPred),color = 'red') + geom_line(aes(y = yTrue),color = 'blue')
 # library(plotly)
 # ggplotly(ggplot(data=result , aes(x = 1:dim(result)[1])) + geom_line(aes(y = yPred),color = 'red') + geom_line(aes(y = yTrue),color = 'blue'))
-MSE = mean((result[,1]-result[,2])^2)
-MSE
+
        
