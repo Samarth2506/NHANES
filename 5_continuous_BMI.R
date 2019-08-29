@@ -34,16 +34,19 @@ fit = lm( y$`log(BMI+1)` ~  ., data = y, subset = trainIdx)
 # summary(fit)
 yPred = exp(predict(fit,y[-trainIdx,]))-1
 result = cbind(yPred,yTrue = BMI[-trainIdx]) %>% na.omit() %>% as.data.frame()
+modelmse = mean(summary(fit)$residuals^2)
+modelmse
 
-library(dvmisc)
-get_mse(fit)
-mean(
-  apply(result,MARGIN = 1,FUN = function(i){abs(i[1]-i[2])<=5})
-)
+# mean(
+#   apply(result,MARGIN = 1,FUN = function(i){abs(i[1]-i[2])<=5})
+# )
+
 mean((result[,1]-result[,2])^2)
 
 library(ggplot2)
-ggplot(data=result , aes(x = 1:dim(result)[1])) + geom_line(aes(y = yPred),color = 'red') + geom_line(aes(y = yTrue),color = 'blue')
+ggplot(data=result , aes(x = 1:dim(result)[1])) + 
+  geom_line(aes(y = yPred),color = 'red') + 
+  geom_line(aes(y = yTrue),color = 'blue')
 # library(plotly)
 # ggplotly(ggplot(data=result , aes(x = 1:dim(result)[1])) + geom_line(aes(y = yPred),color = 'red') + geom_line(aes(y = yTrue),color = 'blue'))
 
