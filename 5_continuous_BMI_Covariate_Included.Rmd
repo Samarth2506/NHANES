@@ -89,6 +89,7 @@ ggplot(data=result , aes(x = 1:dim(result)[1])) +
   labs(x = 'Patients', y = 'BMI',
        title  = "First 5 PCs/Age/Gender included")
 
+
 ggplot(data = result) + 
   aes(x = yTrue, y = yPred) +
   geom_line()
