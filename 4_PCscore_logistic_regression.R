@@ -106,7 +106,7 @@ rm(list = ls())
 load(file = "pcscore.rda")
 
 # first 3 PCs
-y = pcscore[,c(2:4,which(colnames(pcscore) == 'mortstat'))]
+y = pcscore[,c(2:10,which(colnames(pcscore) == 'mortstat'))]
 y$mortstat = as.factor(y$mortstat)
 set.seed(100)
 # trainIdx = sample(c(TRUE, FALSE), dim(y)[1], replace = TRUE, prob = c(.7, .3))

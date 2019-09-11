@@ -50,4 +50,38 @@ ggplot(data=result , aes(x = 1:dim(result)[1])) +
 # library(plotly)
 # ggplotly(ggplot(data=result , aes(x = 1:dim(result)[1])) + geom_line(aes(y = yPred),color = 'red') + geom_line(aes(y = yTrue),color = 'blue'))
 
-       
+#########################################################################
+### ridge regression on BMI
+
+rm(list = ls())
+load(file = "analyticData.rda")
+analyticData = analyticData %>% select(-mortstat,-permth_exm)
+analyticData = analyticData %>% inner_join(Covariate_D[,c('SEQN','BMI')],by = "SEQN")
+
+analyticData = analyticData %>% na.omit()
+set.seed(100)
+trainIdx = sample(dim(analyticData)[1],0.8*dim(analyticData)[1])
+
+
+ytrain = analyticData$BMI[trainIdx]
+xtrain = analyticData[trainIdx,grep("MIN",colnames(analyticData))] %>% as.matrix()
+
+
+
+library(glmnet)
+fit <- glmnet(xtrain, ytrain, lambda = 
+                cv.glmnet(xtrain, ytrain)$lambda.min)
+ypred = predict(fit, newx = analyticData[-trainIdx,grep("MIN",colnames(analyticData))] %>% as.matrix(),
+                s = 'lambda.min')
+
+result = cbind(ypred,ytrue = analyticData$BMI[-trainIdx]) %>% na.omit() %>% as.data.frame()
+mean((result[,1]-result[,2])^2)
+
+library(ggplot2)
+ggplot(data=result , aes(x = 1:dim(result)[1])) + 
+  geom_line(aes(y = ypred),color = 'red') + 
+  geom_line(aes(y = ytrue),color = 'blue')
+
+
+
+

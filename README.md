@@ -73,10 +73,10 @@
 >
 > ```R
 > > ptab
->      
+>   
 > yPred   0   1
->     0  51 245
->     1 118 826
+>  0  51 245
+>  1 118 826
 > > sum(diag(ptab)) / sum(ptab)
 > [1] 0.7072581
 > ```
@@ -93,22 +93,28 @@
 > 
 > Deviance Residuals: 
 >     Min       1Q   Median       3Q      Max  
-> -5.1519   0.1886   0.3789   0.5665   1.1851  
+> -5.2579   0.1785   0.3708   0.5720   1.2018  
 > 
 > Coefficients:
 >              Estimate Std. Error z value Pr(>|z|)    
-> (Intercept)  2.485661   0.087662  28.355  < 2e-16 ***
-> PC1          0.094724   0.006817  13.895  < 2e-16 ***
-> PC2         -0.055732   0.010354  -5.383 7.33e-08 ***
-> PC3         -0.064101   0.009514  -6.737 1.61e-11 ***
+> (Intercept)  2.522431   0.089855  28.072  < 2e-16 ***
+> PC1          0.096047   0.006827  14.069  < 2e-16 ***
+> PC2         -0.054783   0.010307  -5.315 1.07e-07 ***
+> PC3         -0.068555   0.010050  -6.822 9.00e-12 ***
+> PC4         -0.039612   0.017162  -2.308  0.02099 *  
+> PC5          0.012553   0.015650   0.802  0.42248    
+> PC6          0.012767   0.020076   0.636  0.52480    
+> PC7          0.054179   0.021027   2.577  0.00998 ** 
+> PC8         -0.011252   0.021716  -0.518  0.60437    
+> PC9         -0.027085   0.020222  -1.339  0.18045    
 > ---
 > Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 > 
 > (Dispersion parameter for binomial family taken to be 1)
 > 
 >     Null deviance: 2236.5  on 2924  degrees of freedom
-> Residual deviance: 1921.7  on 2921  degrees of freedom
-> AIC: 1929.7
+> Residual deviance: 1908.2  on 2915  degrees of freedom
+> AIC: 1928.2
 > 
 > Number of Fisher Scoring iterations: 6
 > ```
@@ -116,12 +122,12 @@
 >
 > ```R
 > > ptab
->      
-> yPred    0    1
->     0    0    1
->     1  171 1082
+>    
+>        0    1
+>   0    0  171
+>   1    2 1081
 > > sum(diag(ptab)) / sum(ptab)
-> [1] 0.8628389
+> [1] 0.8620415
 > ```
 >
 > 
@@ -130,16 +136,18 @@
 >
 > **logistic ridge regression**
 >
+> glmnet
+>
 > prevent overfitting and underfitting
 >
 > lambda.1se
 >
 > ```R
 > > ptab
->      ytru
+>   ytru
 > ytest    0    1
->     0    0  168
->     1    0 1072
+>  0    0  168
+>  1    0 1072
 > > sum(diag(ptab)) / sum(ptab)
 > [1] 0.8645161
 > ```
@@ -150,10 +158,10 @@
 >
 > ```R
 > > ptab
->      ytru
+>   ytru
 > ytest    0    1
->     0    0  168
->     1    0 1072
+>  0    0  168
+>  1    0 1072
 > > sum(diag(ptab)) / sum(ptab)
 > [1] 0.8645161
 > ```
@@ -169,3 +177,32 @@
 > **pick BMI as target**
 >
 > visualization of linear regression in ggplot2
+>
+> check reports
+
+### Sep
+
+> **Reselect features: treat activities and covariates separately because they are not in same units**
+>
+> | PCs  | Age,gender,etc.  |
+> | ---- | ---------------- |
+> |      | Maybe PCA again? |
+>
+> Just checked the code and found that's exactly what I did before but didn't include Covariate_D
+>
+> 
+>
+> Summary of model?
+>
+> Regularization? Ridge? Lasso?
+>
+> BMI threshold
+>
+> Double check results: Same SEQN for each patient
+>
+> 
+> 
+>
+> 
+>
+

@@ -122,9 +122,9 @@ fit = lm( y$`log(BMI+1)` ~  ., data = y, subset = trainIdx)
 # summary(fit)
 yPred = exp(predict(fit,y[-trainIdx,]))-1
 result = cbind(yPred,yTrue = BMI[-trainIdx]) %>% na.omit() %>% as.data.frame()
-modelmse = mean(summary(fit)$residuals^2)
-# model MSE
-modelmse
+# modelmse = mean(summary(fit)$residuals^2)
+# # model MSE
+# modelmse
 
 # MSE of yPred and yTrue
 mean((result[,1]-result[,2])^2)
@@ -140,7 +140,7 @@ ggplot(data=result , aes(x = 1:dim(result)[1])) +
 
 ```{r}
 
-ysub = y[,c(1:100,which(colnames(y) == 'log(BMI+1)'))]
+ysub = y[,c(1:200,which(colnames(y) == 'log(BMI+1)'))]
 fit = lm( ysub$`log(BMI+1)` ~., data = ysub, subset = trainIdx)
 # summary(fit)
 yPred = exp(predict(fit,ysub[-trainIdx,]))-1
@@ -157,7 +157,7 @@ library(ggplot2)
 ggplot(data=result , aes(x = 1:dim(result)[1])) + 
   geom_line(aes(y = yPred),color = 'red') + 
   geom_line(aes(y = yTrue),color = 'blue') + 
-  labs(title  = "First 100 PCs included")
+  labs(title  = "First 200 PCs included")
 ```
 
 
