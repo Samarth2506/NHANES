@@ -1,4 +1,5 @@
-```{r}
+# Prepross
+```{r include=F}
 rm(list = ls())
 if(T){
   library(rnhanesdata)
@@ -10,10 +11,6 @@ if(T){
   library(keras)
   library(tensorflow)
 }
-```
-
-
-```{r include=F}
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 
 keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
@@ -50,12 +47,6 @@ analyticData = MINdata  %>% inner_join(mortality_good_D %>% select(SEQN,mortstat
   mutate(mortstat = ifelse(mortstat == 0,yes = NA, no = 1)) # re-encode mortstat for further processing: multiply with time
 # NA: alive
 # 1: deceased
-
-if(F){
-  save(analyticData,file = "analyticData.rda")
-}
-rm(list = ls())
-load(file = "analyticData.rda")
 
 analyticData = analyticData %>% select(-permth_exm)
 # NA: alive
@@ -184,6 +175,7 @@ plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 ```
 
+# PC scores vs. BMI
 ```{r}
 
 ```
