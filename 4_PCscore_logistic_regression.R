@@ -85,7 +85,7 @@ analyticData$mortstat = ifelse(analyticData$mortstat %>% is.na,1,0)
 
 # which(sapply(analyticData, class) != "numeric")
 # analyticData = sapply(analyticData, as.numeric) %>% as.data.frame()
-
+temp = analyticData %>% select(-SEQN,-mortstat) %>% na.omit()
 pca = prcomp(analyticData %>% select(-SEQN,-mortstat) %>% na.omit() ,
              center = T,
              scale. = T)

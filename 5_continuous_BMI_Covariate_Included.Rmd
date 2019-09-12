@@ -73,7 +73,7 @@ ysub = as.data.frame(lapply(ysub, function (x) if (is.factor(x)) unclass(x) %>% 
 
 
 # fit = lm(log ~ PC1 + PC2 + PC3  + PC4 + PC5 + RIDAGEYR + Gender, data = ysub, subset = trainidx)
-fit = lm(log ~ . - Race - BMI_cat,data = ysub, subset = trainidx)
+fit = lm(log ~ .  - BMI_cat,data = ysub, subset = trainidx)
 summary(fit)
 
 
