@@ -201,8 +201,42 @@
 > Double check results: Same SEQN for each patient
 >
 > 
-> 
+>
+> **PC scores vs. BMI**
 >
 > 
 >
+> ```R
+> load(file = 'pca.rda')
+> temp = pca$rotation
+> plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
+> plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
+> plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
+> plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
+> ```
+>
+> 
+>
+> ```R
+> rm(list = ls())
+> load(file ='BMI.rda')
+> data = pcscore  %>%
+>   left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN')
+> data = data %>% select(c(1:5),BMI,Race)
+> 
+> 
+> library(ggplot2)
+> 
+> ggplot(data)+
+>   aes(x = BMI,y = PC1, colour = Race, group = Race) + 
+>   geom_line()
+> 
+> ggplot(data)+
+>   aes(x = BMI,y = PC3, colour = Race, group = Race) + 
+>   geom_line()
+> ```
+>
+> 
+>
+> 
 

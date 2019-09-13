@@ -12,7 +12,10 @@ if(T){
   library(tensorflow)
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
+```
 
+
+```{r include=F}
 keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
 accel_good_D <- PAXINTEN_D[keep_inx,] 
 flags_good_D <- Flags_D[keep_inx,]
@@ -138,7 +141,8 @@ y = pcscore[,c(1:6,which(colnames(pcscore) == 'log'))] %>%
 
 y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
 # 2 for female ,1 for male
-
+# "White" "Mexican American" "Other Hispanic" "Black" "Other" 
+# "1" "2" "3" "4" "5"
 
 set.seed(100)
 trainidx = sample(nrow(y),0.7*nrow(y))
@@ -177,6 +181,41 @@ plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 
 # PC scores vs. BMI
 ```{r}
+rm(list = ls())
+load(file ='BMI.rda')
+data = pcscore  %>%
+  left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN')
+data = data %>% select(c(1:5),BMI,Race)
+
+
+library(ggplot2)
+
+ggplot(data)+
+  aes(x = BMI,y = PC1, colour = Race, group = Race) + 
+  geom_line() +
+  labs(title = 'PC1')
+
+ggplot(data)+
+  aes(x = BMI,y = PC3, colour = Race, group = Race) + 
+  geom_line() +
+  labs(title = 'PC3')
+
+ggplot(data) + 
+  aes(x = BMI,y = PC3) +
+  geom_line() + 
+  labs(title = 'PC3')
+
+ggplot(data %>% filter(Race == "Mexican American")) + 
+  aes(x = BMI,y = PC3) +
+  geom_line() + 
+  labs(title = 'Maxican American')
+  
+
+ggplot(data %>% filter(Race == "Black")) + 
+  aes(x = BMI,y = PC3) +
+  geom_line() + 
+  labs(title = 'Maxican American')
+
 
 ```
 
