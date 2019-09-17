@@ -221,22 +221,68 @@
 > rm(list = ls())
 > load(file ='BMI.rda')
 > data = pcscore  %>%
->   left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN')
+> left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN')
 > data = data %>% select(c(1:5),BMI,Race)
 > 
 > 
 > library(ggplot2)
 > 
 > ggplot(data)+
->   aes(x = BMI,y = PC1, colour = Race, group = Race) + 
->   geom_line()
+> aes(x = BMI,y = PC1, colour = Race, group = Race) + 
+> geom_line()
 > 
 > ggplot(data)+
->   aes(x = BMI,y = PC3, colour = Race, group = Race) + 
->   geom_line()
+> aes(x = BMI,y = PC3, colour = Race, group = Race) + 
+> geom_line()
 > ```
 >
 > 
 >
+> ```R
+> Call:
+> lm(formula = log ~ . - BMI_cat, data = y, subset = trainidx)
 > 
+> Residuals:
+>   Min       1Q   Median       3Q      Max 
+> -0.72461 -0.13707 -0.00772  0.12928  0.60376 
+> 
+> Coefficients:
+>            Estimate Std. Error t value Pr(>|t|)    
+> (Intercept)  3.2984489  0.0132763 248.446  < 2e-16 ***
+> PC1         -0.0011646  0.0003092  -3.767 0.000169 ***
+> PC2          0.0005029  0.0003108   1.618 0.105734    
+> PC3          0.0010938  0.0004029   2.715 0.006671 ** 
+> PC4         -0.0003430  0.0005964  -0.575 0.565271    
+> PC5          0.0010227  0.0006836   1.496 0.134747    
+> RIDAGEYR     0.0007831  0.0002173   3.603 0.000319 ***
+> Gender2      0.0102633  0.0078261   1.311 0.189821    
+> Race2        0.0278941  0.0100144   2.785 0.005381 ** 
+> Race3        0.0146841  0.0219751   0.668 0.504050    
+> Race4        0.0518277  0.0094653   5.476 4.74e-08 ***
+> Race5       -0.0129902  0.0187947  -0.691 0.489520    
+> ---
+> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> 
+> Residual standard error: 0.1987 on 2869 degrees of freedom
+> Multiple R-squared:  0.03121,	Adjusted R-squared:  0.0275 
+> F-statistic: 8.403 on 11 and 2869 DF,  p-value: 1.007e-14
+> 
+> [1] 35.86605
+> ```
+>
+> 
+>
+> **Smooth data before PCA**
+>
+> 
+>
+> **Random forest importance plot**
+>
+> 
+>
+> **Nutrition info included / literature**
+>
+> 
+>
+> **BMI regression**
 

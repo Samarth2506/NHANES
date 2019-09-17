@@ -113,6 +113,8 @@ result = cbind(yPred,
 
 # MSE of yPred and yTrue
 mean((result[,1]-result[,2])^2)
+result %>% mutate(Pred_cat = )
+
 
 # visualization
 library(ggplot2)
@@ -214,7 +216,7 @@ ggplot(data %>% filter(Race == "Mexican American")) +
 ggplot(data %>% filter(Race == "Black")) + 
   aes(x = BMI,y = PC3) +
   geom_line() + 
-  labs(title = 'Maxican American')
+  labs(title = 'Black')
 
 
 ```
