@@ -10,85 +10,50 @@ if(T){
   library(caret)
   library(keras)
   library(tensorflow)
+  library(caTools)
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 ```
 
 
 ```{r include=F}
+rm(list = ls())
 keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
 accel_good_D <- PAXINTEN_D[keep_inx,] 
 flags_good_D <- Flags_D[keep_inx,]
 
-# SEQN_inx = (accel_good_C %>% group_by(SEQN) %>% 
-#               filter(length(WEEKDAY) == 7)  %>% as.data.frame 
-#             %>% select(SEQN) %>% unique())$SEQN
-
-
-
-# 4878 patients assumed alive, 732 assumed deceased, 4512 assumed NA
-
-# %>% filter(mortstat != "NA")
-mortality_good_D = Mortality_2015_D  %>%
-  select(SEQN,mortstat,ucod_leading,diabetes_mcod,hyperten_mcod,permth_exm)
-
-covariate_good_D = Covariate_D %>% select(SEQN,RIDAGEYR,
-                                          BMI,BMI_cat,Race,Gender,Diabetes,CHF,CHD,Cancer,
-                                          Stroke,EducationAdult,MobilityProblem,DrinkStatus,DrinksPerWeek,SmokeCigs)
 
 # dot multiply / sumup over min
-MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] * flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
-  select(-c(PAXCAL,PAXSTAT,SDDSRVYR)) %>% 
-  # filter(SEQN %in% SEQN_inx) %>% as.data.frame() %>%
-  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame()
+MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] *
+                       flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
+  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>%
+  select(-PAXCAL,-PAXSTAT,-SDDSRVYR) %>% na.omit()
 
-# 0: Assumed alive 
-# 1: Assumed deceased
-# NA: Under age 18, not available for public release or ineligible for mortality follow-up
-analyticData = MINdata  %>% inner_join(mortality_good_D %>% select(SEQN,mortstat,permth_exm), by = "SEQN") %>% 
-  filter(mortstat != "NA") %>%
-  mutate(mortstat = ifelse(mortstat == 0,yes = NA, no = 1)) # re-encode mortstat for further processing: multiply with time
-# NA: alive
-# 1: deceased
-
-analyticData = analyticData %>% select(-permth_exm)
-# NA: alive
-# 1: deceased
-analyticData$mortstat = ifelse(analyticData$mortstat %>% is.na,1,0)
-# 1: alive, 0 : deceased
-analyticData = analyticData %>% na.omit()
-
-if(F){save(analyticData, file = 'analyticData.rda')}
-pca = prcomp(analyticData %>% select(-SEQN,-mortstat),
+if(F){
+pca = prcomp(MINdata %>% select(-SEQN),
              center = T,
              scale. = T)
-
-if(F){
-  save(pca,file='pca.rda')
+save(pca,file = 'pca.rda')
 }
 
-load(file = 'pca.rda')
-
-screeplot(pca)
-
-pcscore = data.frame(SEQN = analyticData %>% select(SEQN),
-                     pca$x,
-                     mortstat = analyticData %>% select(mortstat))
+# smooth before PCA
+MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
+  apply(MARGIN = 2, function(i) runmean(i,k=10))
+MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
 if(F){
-  save(pcscore, file = "pcscore.rda")
-}
+pca_smooth = prcomp(MINdata_smooth %>% select(-SEQN),
+                 center = T,
+                 scale. = T)
+save(pca_smooth,file  = 'pca_smooth.rda')}
 
-load(file = "pcscore.rda")
+analyticData = data.frame(SEQN=MINdata_smooth$SEQN,
+                          pca_smooth$x) %>% inner_join(Covariate_D,by = 'SEQN') %>% 
+  na.omit() %>% select(-SDDSRVYR,-SDMVPSU,-SDMVSTRA,-WTINT2YR,-WTMEC2YR,-RIDAGEMN,-RIDAGEEX)%>%
+  filter(15<BMI & BMI<55)
 
+analyticData = analyticData %>% mutate('logbmi' = log(analyticData$BMI +1))
 
-pcscore = pcscore %>% select(-mortstat) %>%
-  inner_join(Covariate_D[,c('SEQN','BMI')],by = 'SEQN')
-
-pcscore = pcscore %>% filter(10<BMI & BMI<50)
-pcscore = pcscore %>% mutate('log' = log(pcscore$BMI +1))
-
-if(F){save(pcscore,file = 'BMI.rda')}
-load(file = 'BMI.rda')
+if(F){save(analyticData,file = 'BMI.rda')}
 
 ```
 
@@ -96,24 +61,24 @@ load(file = 'BMI.rda')
 ```{r}
 rm(list = ls())
 load(file = 'BMI.rda')
-pcscore = pcscore %>% select(-SEQN)
+analyticData = analyticData %>% select(-SEQN)
 
 
-y = pcscore[,c(1:500,which(colnames(pcscore) == 'log'))]
+y = analyticData[,c(1:500,which(colnames(analyticData) == 'logbmi'))]
 
 set.seed(100)
 trainidx = sample(nrow(y),0.7*nrow(y))
 
-fit = lm( log ~., data = y, subset = trainidx)
+fit = lm( logbmi ~., data = y, subset = trainidx)
 # summary(fit)
 yPred = exp(predict(fit,y[-trainidx,]))-1
-result = cbind(yPred,
-               yTrue = pcscore[-trainidx,'BMI']) %>% as.data.frame()
+result = cbind(yTrue = analyticData[-trainidx,'BMI'],
+               yPred) %>% as.data.frame()
 
 
 # MSE of yPred and yTrue
 mean((result[,1]-result[,2])^2)
-result %>% mutate(Pred_cat = )
+# result %>% mutate(Pred_cat = )
 
 
 # visualization
@@ -131,31 +96,54 @@ ggplot(data = result) +
 ```
 
 
-
-
-# first 5 PCs + Age + Gender
 ```{r}
-# first 5 PCs + Age + Gender
+rm(list = ls())
 load(file = 'BMI.rda')
-y = pcscore[,c(1:6,which(colnames(pcscore) == 'log'))] %>% 
-  left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN') %>%
-  select(-SEQN)
+y = analyticData %>% select(-SEQN)
+y = y[,c(1:5,1441:1456)] %>% select(-BMI_cat,-logbmi)
+colnames(y)
+fit = randomForest(BMI ~ ., data = y,ntree = 501,
+                   importance = T)
+varImpPlot(fit)
 
+y_cor <- as.data.frame(
+  lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
+
+res_cor = cor(y_cor %>% select(-BMI))
+library(corrplot)
+corrplot(res_cor,
+         type = 'upper',
+         order = 'hclust',
+         diag = F)
+
+```
+
+
+# first 5 PCs + nutrition info
+```{r}
+rm(list = ls())
+load(file = 'BMI.rda')
+analyticData = analyticData %>% select(-SEQN)
+# Y = analyticData[,c(1:6,which(colnames(ana) == 'log'))] %>% 
+#   left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN') %>%
+#   select(-SEQN)
+Y = analyticData[,c(1:5,1441:1456)]
+yTrue = analyticData$BMI
+y = Y %>% select(-BMI,-BMI_cat)
 y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
-# 2 for female ,1 for male
-# "White" "Mexican American" "Other Hispanic" "Black" "Other" 
-# "1" "2" "3" "4" "5"
 
-set.seed(100)
+
+set.seed(111)
 trainidx = sample(nrow(y),0.7*nrow(y))
 # fit = lm(log ~ PC1 + PC2 + PC3  + PC4 + PC5 + RIDAGEYR + Gender, data = ysub, subset = trainidx)
-fit = lm(log ~ .  - BMI_cat,data = y, subset = trainidx)
+ 
+fit = lm(logbmi ~ .,data = y, subset = trainidx)
 summary(fit)
 
-
 yPred = exp(predict(fit,y[-trainidx,]))-1
+yTrue = yTrue[-trainidx]
 result = cbind(yPred,
-               yTrue = pcscore[-trainidx,'BMI']) %>% as.data.frame()
+               yTrue) %>% as.data.frame()
 # MSE of yPred and yTrue
 mean((result[,1]-result[,2])^2)
 
@@ -163,7 +151,7 @@ ggplot(data=result , aes(x = 1:dim(result)[1])) +
   geom_line(aes(y = yPred),color = 'red') + 
   geom_line(aes(y = yTrue),color = 'blue') +
   labs(x = 'Patients', y = 'BMI',
-       title  = "First 5 PCs/Age/Gender included")
+       title  = "First 5 PCs/Nutrition_info included")
 
 
 ggplot(data = result) + 
@@ -173,6 +161,21 @@ ggplot(data = result) +
 ```
 
 ```{r}
+rm(list = ls())
+keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
+accel_good_D <- PAXINTEN_D[keep_inx,] 
+flags_good_D <- Flags_D[keep_inx,]
+
+MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] *
+                       flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
+  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>%
+  select(-PAXCAL,-PAXSTAT,-SDDSRVYR) %>% na.omit()
+if(F){
+pca = prcomp(MINdata %>% select(-SEQN),
+             center = T,
+             scale. = T)
+save(pca,file = 'pca.rda')
+}
 load(file = 'pca.rda')
 temp = pca$rotation
 plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
@@ -181,8 +184,28 @@ plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 ```
 
+
+```{r}
+MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
+  apply(MARGIN = 2, function(i) runmean(i,k=10))
+MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
+if(F){
+pca_bmi = prcomp(MINdata_smooth %>% select(-SEQN),
+                 center = T,
+                 scale. = T)
+save(pca_bmi,file = 'pca_bmi.rda')
+}
+load(file = 'pca_bmi.rda')
+temp = pca_bmi$rotation
+plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
+```
+
 # PC scores vs. BMI
 ```{r}
+if(F){
 rm(list = ls())
 load(file ='BMI.rda')
 data = pcscore  %>%
@@ -217,7 +240,6 @@ ggplot(data %>% filter(Race == "Black")) +
   aes(x = BMI,y = PC3) +
   geom_line() + 
   labs(title = 'Black')
-
-
+}
 ```
 
