@@ -187,7 +187,7 @@ plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 
 ```{r}
 MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
-  apply(MARGIN = 2, function(i) runmean(i,k=10))
+  apply(MARGIN = 2, function(i) runmean(i,k=30))
 MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
 if(F){
 pca_bmi = prcomp(MINdata_smooth %>% select(-SEQN),
@@ -203,7 +203,7 @@ plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 ```
 
-# PC scores vs. BMI
+# PC scores vs. BMI by races
 ```{r}
 if(F){
 rm(list = ls())
