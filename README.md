@@ -272,13 +272,11 @@
 >
 > 
 >
-> **Smooth data before PCA**
+> **Smooth data before PCA: Random forest importance plot**
 >
-> 
+> can be over-smoothed if the %IncMSE != IncNodePurity
 >
-> **Random forest importance plot**
->
-> 
+> Cross-validation
 >
 > **Nutrition info included / literature**
 >

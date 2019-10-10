@@ -186,13 +186,14 @@ plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 
 
 ```{r}
-MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
-  apply(MARGIN = 2, function(i) runmean(i,k=30))
-MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
 if(F){
+MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
+  apply(MARGIN = 2, function(i) runmean(i,k=10))
+MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
 pca_bmi = prcomp(MINdata_smooth %>% select(-SEQN),
                  center = T,
                  scale. = T)
+
 save(pca_bmi,file = 'pca_bmi.rda')
 }
 load(file = 'pca_bmi.rda')
