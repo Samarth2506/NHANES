@@ -37,14 +37,15 @@ save(pca,file = 'pca.rda')
 }
 
 # smooth before PCA
+if(T){
 MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
-  apply(MARGIN = 2, function(i) runmean(i,k=10))
+  apply(MARGIN = 2, function(i) runmean(i,k=5))
 MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
-if(F){
+
 pca_smooth = prcomp(MINdata_smooth %>% select(-SEQN),
                  center = T,
                  scale. = T)
-save(pca_smooth,file  = 'pca_smooth.rda')}
+save(pca_smooth,file  = 'pca_smooth.rda')
 
 analyticData = data.frame(SEQN=MINdata_smooth$SEQN,
                           pca_smooth$x) %>% inner_join(Covariate_D,by = 'SEQN') %>% 
@@ -53,7 +54,7 @@ analyticData = data.frame(SEQN=MINdata_smooth$SEQN,
 
 analyticData = analyticData %>% mutate('logbmi' = log(analyticData$BMI +1))
 
-if(F){save(analyticData,file = 'BMI.rda')}
+save(analyticData,file = 'BMI.rda')}
 
 ```
 
@@ -160,6 +161,7 @@ ggplot(data = result) +
 
 ```
 
+# raw
 ```{r}
 rm(list = ls())
 keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
@@ -184,11 +186,11 @@ plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 ```
 
-
+# Smooth: 2 min
 ```{r}
-if(F){
+if(T){
 MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
-  apply(MARGIN = 2, function(i) runmean(i,k=10))
+  apply(MARGIN = 2, function(i) runmean(i,k=2))
 MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
 pca_bmi = prcomp(MINdata_smooth %>% select(-SEQN),
                  center = T,
@@ -204,43 +206,24 @@ plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 ```
 
-# PC scores vs. BMI by races
+
+# 5 min
 ```{r}
-if(F){
-rm(list = ls())
-load(file ='BMI.rda')
-data = pcscore  %>%
-  left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN')
-data = data %>% select(c(1:5),BMI,Race)
+if(T){
+MINdata_smooth = MINdata[,grep('MIN',colnames(MINdata),value = T)] %>%
+  apply(MARGIN = 2, function(i) runmean(i,k=5))
+MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
+pca_bmi = prcomp(MINdata_smooth %>% select(-SEQN),
+                 center = T,
+                 scale. = T)
 
-
-library(ggplot2)
-
-ggplot(data)+
-  aes(x = BMI,y = PC1, colour = Race, group = Race) + 
-  geom_line() +
-  labs(title = 'PC1')
-
-ggplot(data)+
-  aes(x = BMI,y = PC3, colour = Race, group = Race) + 
-  geom_line() +
-  labs(title = 'PC3')
-
-ggplot(data) + 
-  aes(x = BMI,y = PC3) +
-  geom_line() + 
-  labs(title = 'PC3')
-
-ggplot(data %>% filter(Race == "Mexican American")) + 
-  aes(x = BMI,y = PC3) +
-  geom_line() + 
-  labs(title = 'Maxican American')
-  
-
-ggplot(data %>% filter(Race == "Black")) + 
-  aes(x = BMI,y = PC3) +
-  geom_line() + 
-  labs(title = 'Black')
+save(pca_bmi,file = 'pca_bmi.rda')
 }
+load(file = 'pca_bmi.rda')
+temp = pca_bmi$rotation
+plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 ```
 
