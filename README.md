@@ -280,7 +280,7 @@
 >
 > **Nutrition info included / literature**
 >
-> 
+> ![random_forest_before_smooth](C:\Users\lcqi\OneDrive\Desktop\bcaffo\rnhanesdata\reports\random_forest_before_smooth.png)
 >
 > **BMI regression**
 
