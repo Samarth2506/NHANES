@@ -91,14 +91,14 @@ plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
 # first 5 PCs + nutrition info
 ```{r}
 
-
+load(file = 'analyticData.rda')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
 y = Y
 yTrue = y$BMI
 y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
 set.seed(111)
 trainidx = sample(nrow(y),0.7*nrow(y))
-# fit = lm(log ~ PC1 + PC2 + PC3  + PC4 + PC5 + RIDAGEYR + Gender, data = ysub, subset = trainidx)
+
 
 y$BMI = log(y$BMI +1)
 fit = lm(BMI ~ .,data = y, subset = trainidx)
