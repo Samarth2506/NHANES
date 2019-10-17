@@ -29,118 +29,31 @@ MIN_name = grep('MIN',colnames(accel_good_D),value = T)
 MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
   group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
 
-# try different window size
 if(F){
-err = rep(0,10)
-for(d in 1:10){
-MINdata_smooth = MINdata[,MIN_name] %>%
-  apply(MARGIN = 2, function(i) runmean(i,k=d))
-MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
+  pca_model = prcomp(MINdata %>% select(-SEQN),
+                     center = T,
+                     scale. = T)
+  save(pca_model,file= 'pca_model.rda')
+}
+load(file = 'pca_model.rda')
 
-pca_smooth = prcomp(MINdata_smooth %>% select(-SEQN),
-                 center = T,
-                 scale. = T)
-# save(pca_smooth,file  = 'pca_smooth.rda')
-
-analyticData = data.frame(SEQN=MINdata_smooth$SEQN,
-                          pca_smooth$x) %>% 
+screeplot(pca_model)
+analyticData = data.frame(SEQN=MINdata$SEQN,
+                          pca_model$x) %>% 
   inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
   na.omit() %>% filter(10 <BMI & BMI<60)
 
-analyticData = analyticData %>% mutate('logbmi' = log(analyticData$BMI +1)) %>% select(-BMI,-SEQN)
-# save(analyticData,file = 'BMI.rda')
-
-# first 5 PCs
-y = analyticData[,c(1:5,1441:1444)]
-y <- as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
-yTrue = analyticData$logbmi
-
-set.seed(111)
-trainidx = sample(nrow(y),0.7*nrow(y))
-
- 
-fit = glm(logbmi ~ .,data = y, subset = trainidx)
-# summary(fit)
-
-yPred = exp(predict(fit,y[-trainidx,]))-1
-yTrue = yTrue[-trainidx]
-result = cbind(yPred,
-               yTrue) %>% as.data.frame()
-# MSE of yPred and yTrue
-mse = mean((result[,1]-result[,2])^2)
-err[d] = mse
-}
-
-}
-# > err
-#  [1] 497.9988 495.0901 494.2535 493.7870 493.7071 493.1600 493.1412 493.1106 492.9765
-# [10] 492.8545
-
-
-save(analyticData,file = 'analyticData.rda')
-```
-
-```{r}
-covariate_name = c('SEQN','RIDAGEYR','Race','Gender','BMI')
-analyticData = MINdata %>% left_join(Covariate_D[,covariate_name],by = 'SEQN')
-# > range(analyticData$RIDAGEYR)
-# [1]  6 85
-
-pca_model = prcomp(analyticData[,MIN_name],
-                   center = T,
-                   scale. = T)
-screeplot(pca_model)
-
-analyticData = data.frame(analyticData %>% select(-MIN_name),pca_model$x)
+save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
 ```
 
 
-# lm(BMI ~ 500 PCs)
+
+
 ```{r}
-if(F){
 rm(list = ls())
-load(file = 'BMI.rda')
-analyticData = analyticData %>% select(-SEQN)
-
-
-y = analyticData[,c(1:500,which(colnames(analyticData) == 'logbmi'))]
-
-set.seed(100)
-trainidx = sample(nrow(y),0.7*nrow(y))
-
-fit = lm( logbmi ~., data = y, subset = trainidx)
-# summary(fit)
-yPred = exp(predict(fit,y[-trainidx,]))-1
-result = cbind(yTrue = analyticData[-trainidx,'BMI'],
-               yPred) %>% as.data.frame()
-
-
-# MSE of yPred and yTrue
-mean((result[,1]-result[,2])^2)
-# result %>% mutate(Pred_cat = )
-
-
-# visualization
-library(ggplot2)
-ggplot(data=result , aes(x = 1:dim(result)[1])) + 
-  geom_line(aes(y = yPred),color = 'red') + 
-  geom_line(aes(y = yTrue),color = 'blue') + 
-  labs(x = 'Patients', y = 'BMI',
-        title  = "First 500 PCs included")
-  
-
-ggplot(data = result) + 
-  aes(x = yTrue, y = yPred) +
-  geom_line()
-}
-```
-
-
-```{r}
-# rm(list = ls())
 load(file = 'analyticData.rda')
-y = analyticData %>% select(-SEQN)
-y = y[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
+Y = analyticData
+y = analyticData[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
 colnames(y)
 if(F){
 fit = randomForest(BMI ~ ., data = y,ntree = 501,
@@ -154,7 +67,7 @@ varImpPlot(fit)
 y_cor <- as.data.frame(
   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
 
-res_cor = cor(y_cor %>% select(-BMI))
+res_cor = cor(y_cor)
 library(corrplot)
 corrplot(res_cor,
          type = 'upper',
@@ -164,19 +77,25 @@ corrplot(res_cor,
 ```
 
 
+
+```{r}
+load(file = 'pca_model.rda')
+temp = pca_model$rotation
+plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
+```
+
+
 # first 5 PCs + nutrition info
 ```{r}
 
 
-# Y = analyticData[,c(1:6,which(colnames(ana) == 'log'))] %>% 
-#   left_join(Covariate_D[,c('SEQN','RIDAGEYR','Gender','Race','BMI_cat')],by = 'SEQN') %>%
-#   select(-SEQN)
-# y = Y %>% select(-BMI)
-Y = analyticData[,1:10]
-y = analyticData[,1:10]
-y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
-y = y %>% select(-SEQN) %>% filter(BMI > 15 & BMI<55)
+Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
+y = Y
 yTrue = y$BMI
+y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
 set.seed(111)
 trainidx = sample(nrow(y),0.7*nrow(y))
 # fit = lm(log ~ PC1 + PC2 + PC3  + PC4 + PC5 + RIDAGEYR + Gender, data = ysub, subset = trainidx)
@@ -202,85 +121,29 @@ ggplot(data=result , aes(x = 1:dim(result)[1])) +
 ggplot(data = result) + 
   aes(x = yTrue, y = yPred) +
   geom_point()+
-  geom_smooth(se = TRUE, method = "gam", formula = y~s(x))
+  geom_smooth(se = TRUE, method = 'lm')
+  # + geom_smooth(se = TRUE, method =  'auto')
 
 ```
 
-# raw
-```{r}
-# rm(list = ls())
-# keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
-# accel_good_D <- PAXINTEN_D[keep_inx,] 
-# flags_good_D <- Flags_D[keep_inx,]
-# MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] *
-#                        flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
-#   select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>%
-#   select(-PAXCAL,-PAXSTAT,-SDDSRVYR) %>% na.omit()
-if(F){
-pca = prcomp(MINdata %>% select(-SEQN),
-             center = T,
-             scale. = T)
-save(pca,file = 'pca.rda')
-}
-load(file = 'pca.rda')
-temp = pca$rotation
-plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
-```
 
-# Smooth: 2 min
+
+# try different window size
 ```{r}
-if(F){
+err = rep(0,10)
+for (d in 1:10){
 MINdata_smooth = MINdata[,MIN_name] %>%
-  apply(MARGIN = 2, function(i) runmean(i,k=2))
+  apply(MARGIN = 2, function(i) runmean(i,k=d))
 MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
-pca_smooth_2 = prcomp(MINdata_smooth %>% select(-SEQN),
+pca_smooth = prcomp(MINdata_smooth %>% select(-SEQN),
                  center = T,
                  scale. = T)
 
-save(pca_smooth_2,file = 'pca_smooth_2.rda')
-
-y = data.frame(SEQN= MINdata_smooth$SEQN,pca_smooth_2$x[,1:5]) %>% 
+y = data.frame(SEQN= MINdata_smooth$SEQN,pca_smooth$x[,1:5]) %>% 
   left_join(Covariate_D[,c('RIDAGEYR','Race','Gender','BMI','SEQN')],by = 'SEQN')
 y = y[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
 
-fit = randomForest(BMI ~ ., data = y,ntree = 501,
-                   importance = T)
-save(fit,file = 'rffit_smooth2.rda')
-}
-
-load(file = 'rffit_smooth2.rda')
-load(file = 'pca_smooth_2.rda')
-varImpPlot(fit)
-temp = pca_smooth_2$rotation
-plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
-```
-
-
-# model after smoothing
-```{r}
-
-load(file = 'pca_smooth_2.rda')
-MIN_name = grep('MIN',colnames(accel_good_D),value = T)
-MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
-  group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
-
-analyticData = data.frame(SEQN=MINdata$SEQN,
-                          pca_smooth_2$x) %>% 
-  inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
-  na.omit() %>% filter(15 <BMI & BMI<55) %>% select(-SEQN)
-
-
-y = analyticData[,c(1:5,1441:1444)]
-
-y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
-
-yTrue = analyticData$BMI
+yTrue = y$BMI
 
 y$BMI = log(y$BMI+1)
 
@@ -292,22 +155,15 @@ yTrue = yTrue[-trainidx]
 result = cbind(yPred,
                yTrue) %>% as.data.frame() %>% na.omit()
 
-mean((result[,1]-result[,2])^2)
-# [1] 39.83552
-# MSE increased compared to the raw data
-ggplot(data=result , aes(x = 1:dim(result)[1])) + 
-  geom_line(aes(y = yPred),color = 'red') + 
-  geom_line(aes(y = yTrue),color = 'blue') +
-  labs(x = 'Patients', y = 'BMI',
-       title  = "First 5 PCs + Age + Race + Gender")
 
+err[d] = mean((result[,1]-result[,2])^2)
+}
+err
 
-ggplot(data = result) + 
-  aes(x = yTrue, y = yPred) +
-  geom_point()+
-  geom_smooth(se = TRUE, method = "gam", formula = y~s(x))
-
-
+# > err
+#  [1] 47.93726 49.89128 50.71071 51.17472 51.32988 51.30029 51.16800 51.16298 51.10647
+# [10] 51.17049
 ```
+
 
 
