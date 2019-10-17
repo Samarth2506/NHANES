@@ -11,6 +11,7 @@ if(T){
   library(keras)
   library(tensorflow)
   library(caTools)
+  library(mgcv)
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 ```
@@ -23,11 +24,29 @@ accel_good_D <- PAXINTEN_D[keep_inx,]
 flags_good_D <- Flags_D[keep_inx,]
 
 
+################################################################
+if(F){
+dat <- gamSim(1,n=400,dist="normal",scale=2)
+b <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat)
+summary(b)
+}
 # dot multiply / sumup over min
-MINdata = data.frame(accel_good_D[,1:5],accel_good_D[,6:dim(accel_good_D)[2]] *
-                       flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
-  select(-WEEKDAY) %>% group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>%
-  select(-PAXCAL,-PAXSTAT,-SDDSRVYR) %>% na.omit()
+MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,grep('MIN',colnames(accel_good_D),value = T)] * flags_good_D[,grep('MIN',colnames(flags_good_D),value = T)]) %>% 
+  group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
+
+covariate_name = c('SEQN','RIDAGEYR','BMI','Race','Gender',                              'MobilityProblem','DrinkStatus','DrinksPerWeek','SmokeCigs')
+MIN_name = grep('MIN',colnames(accel_good_D),value = T)
+
+gamdata = MINdata %>% left_join(Covariate_D[,c('SEQN','BMI')], by = 'SEQN')
+hist(gamdata$BMI)
+
+gam_model = gam(log(BMI) ~ s(.-SEQN),method = 'REML',data = gamdata)
+
+
+
+################################################################
+
+
 
 if(F){
 pca = prcomp(MINdata %>% select(-SEQN),
@@ -103,8 +122,12 @@ load(file = 'BMI.rda')
 y = analyticData %>% select(-SEQN)
 y = y[,c(1:5,1441:1456)] %>% select(-BMI_cat,-logbmi)
 colnames(y)
+if(F){
 fit = randomForest(BMI ~ ., data = y,ntree = 501,
                    importance = T)
+save(fit,file = 'rffit.rda')
+}
+load(file = 'rffit.rda')
 varImpPlot(fit)
 
 y_cor <- as.data.frame(
