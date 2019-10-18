@@ -6,7 +6,7 @@
 
 **Timeline**
 
-### July 
+# July
 
 > Some typical ML and DL method to predict conditional survival analysis: **Maxima of Pr(years left to live|assuming die in 10 years)** 
 >
@@ -15,7 +15,7 @@
 > For next, add a new category representing patients not dying in 10 years in neural network: **Maxima of Pr(years left to live)**
 >
 
-### August
+# August
 
 > **New dataset 2005~2006** 
 >
@@ -180,7 +180,7 @@
 >
 > check reports
 
-### Sep
+# September
 
 > **Reselect features: treat activities and covariates separately because they are not in same units**
 >
@@ -279,8 +279,33 @@
 > Cross-validation
 >
 > **Nutrition info included / literature**
->
+
+# October
+
 > ![random_forest_before_smooth](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/random_forest_before_smooth.png?raw=true)
 >
 > ![residuals](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/residuals.png?raw=true)
-
+> 
+> 
+>
+> ```R
+>fit = lm(BMI ~ .,data = y, subset = trainidx)
+> fit2 = lm(BMI~. + RIDAGEYR:PC1,data = y, subset = trainidx)
+>anova(fit,fit2)
+> ```
+>
+> ```R
+>> anova(fit,fit2)
+> Analysis of Variance Table
+>
+> Model 1: BMI ~ RIDAGEYR + Race + Gender + PC1 + PC2 + PC3 + PC4 + PC5
+>Model 2: BMI ~ RIDAGEYR + Race + Gender + PC1 + PC2 + PC3 + PC4 + PC5 + 
+>     RIDAGEYR:PC1
+>  Res.Df    RSS Df Sum of Sq     F    Pr(>F)    
+> 1   4464 215.53                                 
+>2   4463 206.29  1     9.235 199.8 < 2.2e-16 ***
+> ---
+>Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> ```
+> 
+> 

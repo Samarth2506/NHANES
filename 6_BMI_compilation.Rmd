@@ -102,8 +102,14 @@ trainidx = sample(nrow(y),0.7*nrow(y))
 
 
 y$BMI = log(y$BMI +1)
-fit = lm(BMI ~ .,data = y, subset = trainidx)
+
+
+fit = lm(BMI~. + RIDAGEYR:PC1,data = y, subset = trainidx)
+fit2 = lm(BMI ~ .,data = y, subset = trainidx)
+anova(fit,fit2)
+
 summary(fit)
+summary(fit2)
 
 yPred = exp(predict(fit,y[-trainidx,]))-1
 yTrue = yTrue[-trainidx]
@@ -125,7 +131,8 @@ ggplot(data = result) +
   geom_smooth(se = TRUE, method = 'lm')
   # + geom_smooth(se = TRUE, method =  'auto')
 
-plot(fit,which = 1)
+plot(fit,which = 1,main = "interaction term added")
+plot(fit2,which = 1)
 ```
 
 
