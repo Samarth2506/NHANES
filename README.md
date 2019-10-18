@@ -243,11 +243,11 @@
 > lm(formula = log ~ . - BMI_cat, data = y, subset = trainidx)
 > 
 > Residuals:
->   Min       1Q   Median       3Q      Max 
+> Min       1Q   Median       3Q      Max 
 > -0.72461 -0.13707 -0.00772  0.12928  0.60376 
 > 
 > Coefficients:
->            Estimate Std. Error t value Pr(>|t|)    
+>         Estimate Std. Error t value Pr(>|t|)    
 > (Intercept)  3.2984489  0.0132763 248.446  < 2e-16 ***
 > PC1         -0.0011646  0.0003092  -3.767 0.000169 ***
 > PC2          0.0005029  0.0003108   1.618 0.105734    
@@ -282,5 +282,5 @@
 >
 > ![random_forest_before_smooth](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/random_forest_before_smooth.png?raw=true)
 >
-> **BMI regression**
+> ![residuals](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/residuals.png?raw=true)
 
