@@ -132,6 +132,7 @@ plot(fit,which = 1)
 
 # try different window size
 ```{r}
+if(F){
 err = rep(0,10)
 for (d in 1:10){
 MINdata_smooth = MINdata[,MIN_name] %>%
@@ -161,7 +162,7 @@ result = cbind(yPred,
 err[d] = mean((result[,1]-result[,2])^2)
 }
 err
-
+}
 # > err
 #  [1] 47.93726 49.89128 50.71071 51.17472 51.32988 51.30029 51.16800 51.16298 51.10647
 # [10] 51.17049
