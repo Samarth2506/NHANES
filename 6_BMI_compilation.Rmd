@@ -71,8 +71,10 @@ y_cor <- as.data.frame(
 res_cor = cor(y_cor)
 library(corrplot)
 corrplot(res_cor,
+         metho = 'color',
          type = 'upper',
          order = 'hclust',
+         addCoef.col = "black",
          diag = F)
 
 ```
@@ -86,17 +88,18 @@ plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
 plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,5],type = 'l')
 ```
 
 
 # first 5 PCs + nutrition info
 ```{r}
-
+rm(list =ls())
 load(file = 'analyticData.rda')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
 y = Y
 yTrue = y$BMI
-y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
+# y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
 set.seed(111)
 trainidx = sample(nrow(y),0.7*nrow(y))
 
@@ -104,12 +107,13 @@ trainidx = sample(nrow(y),0.7*nrow(y))
 y$BMI = log(y$BMI +1)
 
 
-fit = lm(BMI~. + RIDAGEYR:PC1,data = y, subset = trainidx)
-fit2 = lm(BMI ~ .,data = y, subset = trainidx)
-anova(fit,fit2)
+# fit2 = lm(BMI~. + RIDAGEYR:PC1,data = y, subset = trainidx)
+fit = lm(BMI ~ .,data = y, subset = trainidx)
+
+# anova(fit,fit2)
 
 summary(fit)
-summary(fit2)
+# summary(fit2)
 
 yPred = exp(predict(fit,y[-trainidx,]))-1
 yTrue = yTrue[-trainidx]
@@ -131,8 +135,8 @@ ggplot(data = result) +
   geom_smooth(se = TRUE, method = 'lm')
   # + geom_smooth(se = TRUE, method =  'auto')
 
-plot(fit,which = 1,main = "interaction term added")
-plot(fit2,which = 1)
+# plot(fit2,which = 1,main = "interaction term added")
+plot(fit,which = 1)
 ```
 
 

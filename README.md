@@ -285,27 +285,146 @@
 > ![random_forest_before_smooth](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/random_forest_before_smooth.png?raw=true)
 >
 > ![residuals](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/residuals.png?raw=true)
-> 
-> 
+>
+> **interaction term**
 >
 > ```R
->fit = lm(BMI ~ .,data = y, subset = trainidx)
-> fit2 = lm(BMI~. + RIDAGEYR:PC1,data = y, subset = trainidx)
->anova(fit,fit2)
+> fit = lm(BMI~. + PC1:RIDAGEYR + PC1:Race + PC1:Gender + RIDAGEYR:Race,
+>    data = y, subset = trainidx)
+> fit2 = lm(BMI ~ .,data = y, subset = trainidx)
+> anova(fit,fit2)
 > ```
 >
 > ```R
->> anova(fit,fit2)
 > Analysis of Variance Table
->
-> Model 1: BMI ~ RIDAGEYR + Race + Gender + PC1 + PC2 + PC3 + PC4 + PC5
->Model 2: BMI ~ RIDAGEYR + Race + Gender + PC1 + PC2 + PC3 + PC4 + PC5 + 
->     RIDAGEYR:PC1
->  Res.Df    RSS Df Sum of Sq     F    Pr(>F)    
-> 1   4464 215.53                                 
->2   4463 206.29  1     9.235 199.8 < 2.2e-16 ***
+> 
+> Model 1: BMI ~ RIDAGEYR + Race + Gender + PC1 + PC2 + PC3 + PC4 + PC5 + 
+> PC1:RIDAGEYR + PC1:Race + PC1:Gender + RIDAGEYR:Race
+> Model 2: BMI ~ RIDAGEYR + Race + Gender + PC1 + PC2 + PC3 + PC4 + PC5
+> Res.Df    RSS  Df Sum of Sq      F    Pr(>F)    
+> 1   4454 203.52                                   
+> 2   4464 215.53 -10   -12.008 26.279 < 2.2e-16 ***
 > ---
->Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> 
+> Call:
+> lm(formula = BMI ~ . + PC1:RIDAGEYR + PC1:Race + PC1:Gender + 
+> RIDAGEYR:Race, data = y, subset = trainidx)
+> 
+> Residuals:
+> Min       1Q   Median       3Q      Max 
+> -0.60949 -0.14959 -0.01866  0.12842  0.87540 
+> 
+> Coefficients:
+>                           Estimate Std. Error t value Pr(>|t|)    
+> (Intercept)                    3.146e+00  1.212e-02 259.539  < 2e-16 ***
+> RIDAGEYR                       3.695e-03  2.682e-04  13.776  < 2e-16 ***
+> RaceMexican American           8.251e-04  1.630e-02   0.051  0.95964    
+> RaceOther Hispanic            -8.465e-03  3.752e-02  -0.226  0.82150    
+> RaceBlack                      9.035e-03  1.670e-02   0.541  0.58859    
+> RaceOther                     -1.328e-01  3.038e-02  -4.371 1.26e-05 ***
+> GenderFemale                  -7.938e-03  6.697e-03  -1.185  0.23602    
+> PC1                            1.041e-02  7.142e-04  14.574  < 2e-16 ***
+> PC2                           -1.079e-05  2.881e-04  -0.037  0.97012    
+> PC3                            5.749e-04  3.781e-04   1.520  0.12847    
+> PC4                           -4.402e-04  5.619e-04  -0.783  0.43343    
+> PC5                           -1.392e-03  5.739e-04  -2.426  0.01530 *  
+> RIDAGEYR:PC1                  -2.069e-04  1.483e-05 -13.951  < 2e-16 ***
+> RaceMexican American:PC1      -2.196e-03  7.718e-04  -2.845  0.00446 ** 
+> RaceOther Hispanic:PC1        -4.713e-03  1.725e-03  -2.732  0.00633 ** 
+> RaceBlack:PC1                 -1.336e-03  7.724e-04  -1.729  0.08386 .  
+> RaceOther:PC1                 -3.649e-03  1.414e-03  -2.581  0.00989 ** 
+> GenderFemale:PC1               3.020e-03  5.483e-04   5.508 3.84e-08 ***
+> RIDAGEYR:RaceMexican American  1.148e-03  4.289e-04   2.677  0.00745 ** 
+> RIDAGEYR:RaceOther Hispanic    1.367e-03  1.041e-03   1.314  0.18906    
+> RIDAGEYR:RaceBlack             1.486e-03  4.267e-04   3.483  0.00050 ***
+> RIDAGEYR:RaceOther             2.671e-03  8.929e-04   2.991  0.00279 ** 
+> ---
+> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> 
+> Residual standard error: 0.2138 on 4454 degrees of freedom
+> Multiple R-squared:  0.2971,	Adjusted R-squared:  0.2938 
+> F-statistic: 89.67 on 21 and 4454 DF,  p-value: < 2.2e-16
+> 
+> # MSE
+> [1] 42.30455
+> 
 > ```
+>
+> 
+>
+> **No interaction**
+>
+> ```R
+> 
+> Call:
+> lm(formula = BMI ~ ., data = y, subset = trainidx)
+> 
+> Residuals:
+>     Min      1Q  Median      3Q     Max 
+> -0.6736 -0.1545 -0.0176  0.1339  0.8491 
+> 
+> Coefficients:
+>                        Estimate Std. Error t value Pr(>|t|)    
+> (Intercept)           3.135e+00  9.875e-03 317.428  < 2e-16 ***
+> RIDAGEYR              3.138e-03  1.786e-04  17.571  < 2e-16 ***
+> RaceMexican American  4.421e-02  8.669e-03   5.100 3.54e-07 ***
+> RaceOther Hispanic    4.600e-02  1.979e-02   2.325  0.02013 *  
+> RaceBlack             5.592e-02  8.497e-03   6.581 5.21e-11 ***
+> RaceOther            -5.031e-02  1.588e-02  -3.168  0.00154 ** 
+> GenderFemale         -4.393e-03  6.862e-03  -0.640  0.52208    
+> PC1                   5.745e-03  3.143e-04  18.278  < 2e-16 ***
+> PC2                  -1.165e-05  2.957e-04  -0.039  0.96856    
+> PC3                   2.126e-03  3.731e-04   5.699 1.28e-08 ***
+> PC4                  -2.462e-03  5.560e-04  -4.428 9.74e-06 ***
+> PC5                  -2.430e-03  5.816e-04  -4.179 2.99e-05 ***
+> ---
+> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> 
+> Residual standard error: 0.2197 on 4464 degrees of freedom
+> Multiple R-squared:  0.2557,	Adjusted R-squared:  0.2538 
+> F-statistic: 139.4 on 11 and 4464 DF,  p-value: < 2.2e-16
+> 
+> [1] 43.46444
+> ```
+>
+> 
+>
+> **Try different window size**
+>
+> ```{r}
+> if(F){
+> err = rep(0,10)
+> for (d in 1:10){
+> MINdata_smooth = MINdata[,MIN_name] %>%
+> apply(MARGIN = 2, function(i) runmean(i,k=d))
+> MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
+> pca_smooth = prcomp(MINdata_smooth %>% select(-SEQN),
+>               center = T,
+>               scale. = T)
+> 
+> y = data.frame(SEQN= MINdata_smooth$SEQN,pca_smooth$x[,1:5]) %>% 
+> left_join(Covariate_D[,c('RIDAGEYR','Race','Gender','BMI','SEQN')],by = 'SEQN')
+> y = y[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
+> 
+> yTrue = y$BMI
+> 
+> y$BMI = log(y$BMI+1)
+> 
+> fit = lm(BMI ~ .,data = y, subset = trainidx)
+> summary(fit)
+> 
+> yPred = exp(predict(fit,y[-trainidx,]))-1
+> yTrue = yTrue[-trainidx]
+> result = cbind(yPred,
+>             yTrue) %>% as.data.frame() %>% na.omit()
 > 
 > 
+> err[d] = mean((result[,1]-result[,2])^2)
+> }
+> err
+> }
+> # > err
+> #  [1] 47.93726 49.89128 50.71071 51.17472 51.32988 51.30029 51.16800 51.16298 51.10647
+> # [10] 51.17049
+> ```
