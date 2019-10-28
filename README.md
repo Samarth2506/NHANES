@@ -1,10 +1,9 @@
-# nhanesdata
+# NHANES
 
-> Source 
 > https://github.com/andrew-leroux/rnhanesdata 
 > https://wwwn.cdc.gov/Nchs/Nhanes/
 
-**Timeline**
+
 
 # July
 
@@ -290,7 +289,7 @@
 >
 > ```R
 > fit = lm(BMI~. + PC1:RIDAGEYR + PC1:Race + PC1:Gender + RIDAGEYR:Race,
->    data = y, subset = trainidx)
+> data = y, subset = trainidx)
 > fit2 = lm(BMI ~ .,data = y, subset = trainidx)
 > anova(fit,fit2)
 > ```
@@ -316,7 +315,7 @@
 > -0.60949 -0.14959 -0.01866  0.12842  0.87540 
 > 
 > Coefficients:
->                           Estimate Std. Error t value Pr(>|t|)    
+>                        Estimate Std. Error t value Pr(>|t|)    
 > (Intercept)                    3.146e+00  1.212e-02 259.539  < 2e-16 ***
 > RIDAGEYR                       3.695e-03  2.682e-04  13.776  < 2e-16 ***
 > RaceMexican American           8.251e-04  1.630e-02   0.051  0.95964    
@@ -361,11 +360,11 @@
 > lm(formula = BMI ~ ., data = y, subset = trainidx)
 > 
 > Residuals:
->     Min      1Q  Median      3Q     Max 
+>  Min      1Q  Median      3Q     Max 
 > -0.6736 -0.1545 -0.0176  0.1339  0.8491 
 > 
 > Coefficients:
->                        Estimate Std. Error t value Pr(>|t|)    
+>                     Estimate Std. Error t value Pr(>|t|)    
 > (Intercept)           3.135e+00  9.875e-03 317.428  < 2e-16 ***
 > RIDAGEYR              3.138e-03  1.786e-04  17.571  < 2e-16 ***
 > RaceMexican American  4.421e-02  8.669e-03   5.100 3.54e-07 ***
@@ -392,7 +391,7 @@
 >
 > **Try different window size**
 >
-> ```{r}
+> ```R
 > if(F){
 > err = rep(0,10)
 > for (d in 1:10){
@@ -400,8 +399,8 @@
 > apply(MARGIN = 2, function(i) runmean(i,k=d))
 > MINdata_smooth = data.frame(SEQN = MINdata$SEQN,MINdata_smooth)
 > pca_smooth = prcomp(MINdata_smooth %>% select(-SEQN),
->               center = T,
->               scale. = T)
+>            center = T,
+>            scale. = T)
 > 
 > y = data.frame(SEQN= MINdata_smooth$SEQN,pca_smooth$x[,1:5]) %>% 
 > left_join(Covariate_D[,c('RIDAGEYR','Race','Gender','BMI','SEQN')],by = 'SEQN')
@@ -417,7 +416,7 @@
 > yPred = exp(predict(fit,y[-trainidx,]))-1
 > yTrue = yTrue[-trainidx]
 > result = cbind(yPred,
->             yTrue) %>% as.data.frame() %>% na.omit()
+>          yTrue) %>% as.data.frame() %>% na.omit()
 > 
 > 
 > err[d] = mean((result[,1]-result[,2])^2)
@@ -428,3 +427,9 @@
 > #  [1] 47.93726 49.89128 50.71071 51.17472 51.32988 51.30029 51.16800 51.16298 51.10647
 > # [10] 51.17049
 > ```
+>
+> 
+>
+> **Partial regression plot**
+>
+> 
