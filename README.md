@@ -1,4 +1,4 @@
-# rnhanesdata
+# nhanesdata
 
 > Source 
 > https://github.com/andrew-leroux/rnhanesdata 
