@@ -1,5 +1,5 @@
 # Prepross
-```{r include=F}
+```{r include=F,warning=FALSE,message=FALSE}
 # rm(list = ls())
 if(T){
   library(rnhanesdata)
@@ -17,6 +17,11 @@ if(T){
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 ```
+
+```{r}
+table(Covariate_D %>% filter(SEQN %in% analyticData$SEQN) %>% select(BMI_cat))
+```
+
 
 # pre processing
 ```{r include=F}
