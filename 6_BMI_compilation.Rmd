@@ -118,7 +118,7 @@ fit = glm(BMI ~ .,data = y, subset = trainidx)
 
 summary(fit)
 # summary(fit2)
-if(F){
+if(T){
 avPlots(glm(BMI ~ .,data = y, subset = trainidx),ask = FALSE)
 }
 
