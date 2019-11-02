@@ -123,22 +123,26 @@ fit = glm(BMI ~ .,data = y, subset = trainidx)
 
 summary(fit)
 # summary(fit2)
-if(T){
+
+
+
 avPlots(glm(BMI ~ .,data = y, subset = trainidx),ask = FALSE)
-}
+vif(fit)
+
+# y_cor <- as.data.frame(
+#   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
+# res_cor = cor(y_cor)
+# library(corrplot)
+# corrplot(res_cor,
+#          metho = 'color',
+#          type = 'upper',
+#          order = 'hclust',
+#          addCoef.col = "black",
+#          diag = F)
 
 
 
-y_cor <- as.data.frame(
-  lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
-res_cor = cor(y_cor)
-library(corrplot)
-corrplot(res_cor,
-         metho = 'color',
-         type = 'upper',
-         order = 'hclust',
-         addCoef.col = "black",
-         diag = F)
+
 
 
 

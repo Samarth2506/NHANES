@@ -428,8 +428,70 @@
 > # [10] 51.17049
 > ```
 >
-> 
+
+# November
+
+> **Manu**
 >
 > **Partial regression plot**
 >
+> **VIF**
+>
+> ```R
+> (Dispersion parameter for gaussian family taken to be 0.04828072)
 > 
+>     Null deviance: 289.56  on 4475  degrees of freedom
+> Residual deviance: 215.53  on 4464  degrees of freedom
+> AIC: -849.19
+> 
+> Number of Fisher Scoring iterations: 2
+> 
+>              GVIF Df GVIF^(1/(2*Df))
+> RIDAGEYR 1.551448  1        1.245572
+> Race     1.141721  4        1.016705
+> Gender   1.090336  1        1.044192
+> PC1      1.430462  1        1.196019
+> PC2      1.046278  1        1.022877
+> PC3      1.073130  1        1.035920
+> PC4      1.014406  1        1.007177
+> PC5      1.013185  1        1.006571
+> 
+> ```
+> 
+> ```R
+> 
+> Call:
+> glm(formula = BMI ~ ., data = y, subset = trainidx)
+> 
+> Deviance Residuals: 
+>     Min       1Q   Median       3Q      Max  
+>    -0.6736  -0.1545  -0.0176   0.1339   0.8491  
+> 
+> Coefficients:
+>                        Estimate Std. Error t value Pr(>|t|)    
+> (Intercept)           3.135e+00  9.875e-03 317.428  < 2e-16 ***
+> RIDAGEYR              3.138e-03  1.786e-04  17.571  < 2e-16 ***
+> RaceMexican American  4.421e-02  8.669e-03   5.100 3.54e-07 ***
+> RaceOther Hispanic    4.600e-02  1.979e-02   2.325  0.02013 *  
+> RaceBlack             5.592e-02  8.497e-03   6.581 5.21e-11 ***
+> RaceOther            -5.031e-02  1.588e-02  -3.168  0.00154 ** 
+> GenderFemale         -4.393e-03  6.862e-03  -0.640  0.52208    
+> PC1                   5.745e-03  3.143e-04  18.278  < 2e-16 ***
+> PC2                  -1.165e-05  2.957e-04  -0.039  0.96856    
+> PC3                   2.126e-03  3.731e-04   5.699 1.28e-08 ***
+> PC4                  -2.462e-03  5.560e-04  -4.428 9.74e-06 ***
+> PC5                  -2.430e-03  5.816e-04  -4.179 2.99e-05 ***
+> ---
+> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> ```
+> 
+> 
+> 
+> ```R
+> MSE:[1] 43.46444
+> ```
+> 
+> 
+
+
+
