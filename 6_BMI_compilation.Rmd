@@ -33,7 +33,7 @@ flags_good_D <- Flags_D[keep_inx,]
 
 MIN_name = grep('MIN',colnames(accel_good_D),value = T)
 MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
-  group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
+  group_by(SEQN) %>% summarise_ ?each(funs(mean)) %>% as.data.frame() %>% na.omit()
 
 if(F){
   pca_model = prcomp(MINdata %>% select(-SEQN),
