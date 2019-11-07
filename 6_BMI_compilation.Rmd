@@ -14,6 +14,7 @@ if(T){
   library(mgcv)
   library(boot)
   library(car)
+  # library(PCAtools)
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 ```
@@ -43,7 +44,7 @@ if(F){
 }
 load(file = 'pca_model.rda')
 
-screeplot(pca_model)
+stats::screeplot(pca_model)
 analyticData = data.frame(SEQN=MINdata$SEQN,
                           pca_model$x) %>% 
   inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
@@ -52,6 +53,34 @@ analyticData = data.frame(SEQN=MINdata$SEQN,
 save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
 ```
 
+
+# PCA tools
+```{r}
+  # pca_model = prcomp(MINdata %>% select(-SEQN),
+  #                    center = T,
+  #                    scale. = T)
+  # save(pca_model,file= 'pca_model.rda')
+if(F){
+load(file = 'analyticData.rda')
+
+p <- pca(MINdata %>% select(-SEQN))
+horn <- parallelPCA(MINdata %>% select(-SEQN))
+horn$n
+# [1] 76
+elbow <- findElbowPoint(p$variance)
+elbow
+#   16 
+
+save(horn,elbow,file = 'PCAtools.rda')
+library(ggplot2)
+
+screeplot(p,
+  components = getComponents(p, 1:20),
+  vline = c(horn$n, elbow)) +
+  geom_text(aes(horn$n + 1, 50, label = "Horn's", vjust = -1)) +
+  geom_text(aes(elbow + 1, 50, label = "Elbow", vjust = -1))
+}
+```
 
 
 
@@ -90,11 +119,16 @@ corrplot(res_cor,
 ```{r}
 load(file = 'pca_model.rda')
 temp = pca_model$rotation
-plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l')
-plot(( 1 : nrow(temp)) / 60, temp[,5],type = 'l')
+plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l',
+     xlab = "Time of Day",ylab = "Variable Loadings on PC1")
+plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l',
+     xlab = "Time of Day",ylab = "Variable Loadings on PC2")
+plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l',
+     xlab = "Time of Day",ylab = "Variable Loadings on PC3")
+plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l',
+     xlab = "Time of Day",ylab = "Variable Loadings on PC4")
+plot(( 1 : nrow(temp)) / 60, temp[,5],type = 'l',
+     xlab = "Time of Day",ylab = "Variable Loadings on PC5")
 ```
 
 
@@ -114,6 +148,7 @@ trainidx = sample(nrow(y),0.7*nrow(y))
 y$BMI = log(y$BMI +1)
 
 
+# fit = lm(BMI ~ .,data = y, subset = trainidx)
 fit = glm(BMI ~ .,data = y, subset = trainidx)
 
 # anova(fit,fit2)
