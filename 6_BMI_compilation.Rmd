@@ -43,12 +43,32 @@ if(F){
   save(pca_model,file= 'pca_model.rda')
 }
 load(file = 'pca_model.rda')
+# summary(pca_model)
+
+if(F){
+eigs <- pca_model$sdev^2
+cbind(
+  SD = sqrt(eigs),
+  Proportion = eigs/sum(eigs),
+  Cumulative = cumsum(eigs)/sum(eigs))
+}
+
 
 stats::screeplot(pca_model)
+
 analyticData = data.frame(SEQN=MINdata$SEQN,
                           pca_model$x) %>% 
   inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
-  na.omit() %>% filter(15 <BMI & BMI< 40)
+  na.omit() 
+# > quantile(analyticData$BMI,probs = 0.05)
+#      5% 
+# 15.9695 
+# > quantile(analyticData$BMI,probs = 0.95)
+#    95% 
+# 39.151
+analyticData = analyticData %>% filter(15 <BMI & BMI< 40)
+
+
 
 save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
 ```
@@ -88,7 +108,8 @@ screeplot(p,
 rm(list = ls())
 load(file = 'analyticData.rda')
 Y = analyticData
-y = analyticData[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
+PCnames = paste('PC',1:5,sep = '')
+y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 colnames(y)
 if(F){
 fit = randomForest(BMI ~ ., data = y,ntree = 501,
@@ -133,11 +154,40 @@ plot(( 1 : nrow(temp)) / 60, temp[,5],type = 'l',
 
 
 
-# first 5 PCs + nutrition info
+# Cross-validation
+```{r}
+rm(list = ls())
+load(file = 'analyticData.rda')
+res = c()
+if(F){
+for(i in 1:30){
+  PCnames = paste('PC',1:i,sep = '')
+  data_ctrl = trainControl(method = 'cv',number =10)
+  dat = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)]
+  dat$BMI = log(dat$BMI + 1) # here we don't transform back BMI when calculating error
+  model = caret::train(BMI~.,
+                data= dat,
+                trControl = data_ctrl,
+                method = 'lm',
+                na.action = na.pass
+                )
+  res = c(res,mean(model$resample$RMSE))
+  
+}
+  save(res, file = 'CV_NumberofPCs.rda')
+}
+load(file = 'CV_NumberofPCs.rda')
+plot(res,type = 'l')
+which(res==min(res))
+```
+
+
+# PCs + nutrition info
 ```{r}
 rm(list =ls())
 load(file = 'analyticData.rda')
-Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI','PC1','PC2','PC3','PC4','PC5')] %>% na.omit()
+PCnames = paste('PC',1:13,sep = '')
+Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 y = Y
 yTrue = y$BMI
 # y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
@@ -175,25 +225,19 @@ vif(fit)
 #          addCoef.col = "black",
 #          diag = F)
 
-
-
-
-
-
-
-
 yPred = exp(predict(fit,y[-trainidx,]))-1
 yTrue = yTrue[-trainidx]
 result = cbind(yPred,
                yTrue) %>% as.data.frame() %>% na.omit()
 # MSE of yPred and yTrue
-mean((result[,1]-result[,2])^2)
+mean((yPred-yTrue)^2)
+# mean((result[,1]-result[,2])^2)
 
 ggplot(data=result , aes(x = 1:dim(result)[1])) + 
   geom_line(aes(y = yPred),color = 'red') + 
   geom_line(aes(y = yTrue),color = 'blue') +
   labs(x = 'Patients', y = 'BMI',
-       title  = "First 5 PCs + Age + Race + Gender")
+       title  = "PCs + Age + Race + Gender")
 
 
 ggplot(data = result) + 
@@ -205,6 +249,9 @@ ggplot(data = result) +
 # plot(fit2,which = 1,main = "interaction term added")
 plot(fit,which = 1)
 ```
+
+
+
 
 
 
