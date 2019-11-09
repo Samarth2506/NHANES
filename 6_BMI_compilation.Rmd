@@ -43,6 +43,7 @@ if(F){
   save(pca_model,file= 'pca_model.rda')
 }
 load(file = 'pca_model.rda')
+
 # summary(pca_model)
 
 if(F){
@@ -166,11 +167,11 @@ load(file = 'analyticData.rda')
 res_RMSE = c()
 res_Rsquared = c()
 if(F){
-for(i in 1:30){
+for(i in 1:50){
   PCnames = paste('PC',1:i,sep = '')
   data_ctrl = trainControl(method = 'cv',number =10)
   dat = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)]
-  dat$BMI = log(dat$BMI + 1) # here we don't transform back BMI when calculating error
+  # dat$BMI = log(dat$BMI + 1) # 
   model = caret::train(BMI~.,
                 data= dat,
                 trControl = data_ctrl,
@@ -181,11 +182,38 @@ for(i in 1:30){
   res_Rsquared = c(res_Rsquared,mean(model$resample$Rsquared))
   
 }
-  save(res_RMSE,res_Rsquared, file = 'CV_NumberofPCs.rda')
+  save(res_RMSE,res_Rsquared, file = 'CV_50PCs.rda')
 }
-load(file = 'CV_NumberofPCs.rda')
-plot(res_RMSE,type = 'l')
-plot(res_Rsquared,type = 'l')
+load(file = 'CV_50PCs.rda')
+
+ggplot(data.frame(res_RMSE)) + 
+  aes(x = 1:length(res_RMSE), y = res_RMSE) +
+  geom_line()+
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto',color = 'blue')
+
+ggplot(data.frame(res_Rsquared)) + 
+  aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
+  geom_line()+
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto',color = 'blue')
+
+# load(file = 'CV_300PCs.rda')
+# 
+# 
+# ggplot(data.frame(res_RMSE)) + 
+#   aes(x = 1:length(res_RMSE), y = res_RMSE) +
+#   geom_line()+
+#   # geom_smooth(se = TRUE, method = 'lm')+
+#   geom_smooth(se = TRUE, method =  'auto',color = 'blue')
+# 
+# ggplot(data.frame(res_Rsquared)) + 
+#   aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
+#   geom_line()+
+#   # geom_smooth(se = TRUE, method = 'lm')+
+#   geom_smooth(se = TRUE, method =  'auto',color = 'blue')
+# plot(res_RMSE,type = 'l')
+# plot(res_Rsquared,type = 'l')
 
 ```
 
