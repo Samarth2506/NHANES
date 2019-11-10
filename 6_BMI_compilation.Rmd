@@ -218,13 +218,38 @@ which(res_Rsquared==max(res_Rsquared))
 # plot(res_Rsquared,type = 'l')
 
 ```
+# ANOVA
+```{r}
+models = list()
+for (i in 1:15){
+  PCnames = paste('PC',1:i,sep = '')
+  y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+  model = lm(BMI ~., data = y, subset = trainidx)
+  models = c(models,list(model))
+}
+# PCnames = paste('PC',1:3,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit0 = lm(BMI ~., data = y, subset = trainidx)
+# PCnames = paste('PC',1:5,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit1 = lm(BMI ~., data = y, subset = trainidx)
+# PCnames = paste('PC',1:10,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit2 = lm(BMI ~., data = y, subset = trainidx)
+# PCnames = paste('PC',1:13,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit3 = lm(BMI ~., data = y, subset = trainidx)
+
+do.call(anova,models)
+```
+
 
 
 # PCs + nutrition info
 ```{r}
 rm(list =ls())
 load(file = 'analyticData.rda')
-PCnames = paste('PC',1:13,sep = '')
+PCnames = paste('PC',1:5,sep = '')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 y = Y
 yTrue = y$BMI
@@ -283,31 +308,6 @@ ggplot(data = result) +
 
 # plot(fit2,which = 1,main = "interaction term added")
 plot(fit,which = 1)
-```
-
-# ANOVA
-```{r}
-models = list()
-for (i in 1:15){
-  PCnames = paste('PC',1:i,sep = '')
-  y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-  model = lm(BMI ~., data = y, subset = trainidx)
-  models = c(models,list(model))
-}
-# PCnames = paste('PC',1:3,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit0 = lm(BMI ~., data = y, subset = trainidx)
-# PCnames = paste('PC',1:5,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit1 = lm(BMI ~., data = y, subset = trainidx)
-# PCnames = paste('PC',1:10,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit2 = lm(BMI ~., data = y, subset = trainidx)
-# PCnames = paste('PC',1:13,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit3 = lm(BMI ~., data = y, subset = trainidx)
-
-do.call(anova,models)
 ```
 
 
