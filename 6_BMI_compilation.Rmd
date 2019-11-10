@@ -198,6 +198,8 @@ ggplot(data.frame(res_Rsquared)) +
   # geom_smooth(se = TRUE, method = 'lm')+
   geom_smooth(se = TRUE, method =  'auto',color = 'blue')
 
+which(res_RMSE==min(res_RMSE))
+which(res_Rsquared==max(res_Rsquared))
 # load(file = 'CV_300PCs.rda')
 # 
 # 
@@ -283,22 +285,29 @@ ggplot(data = result) +
 plot(fit,which = 1)
 ```
 
-
+# ANOVA
 ```{r}
-PCnames = paste('PC',1:3,sep = '')
-y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-fit0 = lm(BMI ~., data = y, subset = trainidx)
-PCnames = paste('PC',1:5,sep = '')
-y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-fit1 = lm(BMI ~., data = y, subset = trainidx)
-PCnames = paste('PC',1:10,sep = '')
-y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-fit2 = lm(BMI ~., data = y, subset = trainidx)
-PCnames = paste('PC',1:13,sep = '')
-y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-fit3 = lm(BMI ~., data = y, subset = trainidx)
+models = list()
+for (i in 1:15){
+  PCnames = paste('PC',1:i,sep = '')
+  y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+  model = lm(BMI ~., data = y, subset = trainidx)
+  models = c(models,list(model))
+}
+# PCnames = paste('PC',1:3,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit0 = lm(BMI ~., data = y, subset = trainidx)
+# PCnames = paste('PC',1:5,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit1 = lm(BMI ~., data = y, subset = trainidx)
+# PCnames = paste('PC',1:10,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit2 = lm(BMI ~., data = y, subset = trainidx)
+# PCnames = paste('PC',1:13,sep = '')
+# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+# fit3 = lm(BMI ~., data = y, subset = trainidx)
 
-anova(fit0,fit1,fit2,fit3)
+do.call(anova,models)
 ```
 
 
