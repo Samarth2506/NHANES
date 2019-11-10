@@ -224,6 +224,8 @@ models = list()
 for (i in 1:15){
   PCnames = paste('PC',1:i,sep = '')
   y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+  set.seed(111)
+  trainidx = sample(nrow(y),0.7*nrow(y))
   model = lm(BMI ~., data = y, subset = trainidx)
   models = c(models,list(model))
 }
