@@ -152,10 +152,6 @@ plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l',
 plot(( 1 : nrow(temp)) / 60, temp[,5],type = 'l',
      xlab = "Time of Day",ylab = "Variable Loadings on PC5")
 
-plot(( 1 : nrow(temp)) / 60, temp[,9],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC5")
-plot(( 1 : nrow(temp)) / 60, temp[,10],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC5")
 ```
 
 
