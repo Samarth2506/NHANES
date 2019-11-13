@@ -141,17 +141,30 @@ corrplot(res_cor,
 ```{r}
 load(file = 'pca_model.rda')
 temp = pca_model$rotation
-plot(( 1 : nrow(temp)) / 60, temp[,1],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC1")
-plot(( 1 : nrow(temp)) / 60, temp[,2],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC2")
-plot(( 1 : nrow(temp)) / 60, temp[,3],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC3")
-plot(( 1 : nrow(temp)) / 60, temp[,4],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC4")
-plot(( 1 : nrow(temp)) / 60, temp[,5],type = 'l',
-     xlab = "Time of Day",ylab = "Variable Loadings on PC5")
+ggplot(data.frame(temp)) + 
+  aes(x = 1:nrow(temp)/60,y = temp[,1]) + 
+  geom_line() +
+  labs(x = "Time of Day", y = "Variable Loadings on PC1")
 
+ggplot(data.frame(temp)) + 
+  aes(x = 1:nrow(temp)/60,y = temp[,2]) + 
+  geom_line() +
+  labs(x = "Time of Day", y = "Variable Loadings on PC2")
+
+ggplot(data.frame(temp)) + 
+  aes(x = 1:nrow(temp)/60,y = temp[,3]) + 
+  geom_line() +
+  labs(x = "Time of Day", y = "Variable Loadings on PC3")
+
+ggplot(data.frame(temp)) + 
+  aes(x = 1:nrow(temp)/60,y = temp[,4]) + 
+  geom_line() +
+  labs(x = "Time of Day", y = "Variable Loadings on PC4")
+
+ggplot(data.frame(temp)) + 
+  aes(x = 1:nrow(temp)/60,y = temp[,5]) + 
+  geom_line() +
+  labs(x = "Time of Day", y = "Variable Loadings on PC5")
 ```
 
 
