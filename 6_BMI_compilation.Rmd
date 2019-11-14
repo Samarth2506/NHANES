@@ -24,6 +24,9 @@ table(Covariate_D %>% filter(SEQN %in% analyticData$SEQN) %>% select(BMI_cat))
 ```
 
 
+
+
+
 # pre processing
 ```{r include=F}
 rm(list = ls())
@@ -35,6 +38,10 @@ flags_good_D <- Flags_D[keep_inx,]
 MIN_name = grep('MIN',colnames(accel_good_D),value = T)
 MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
   group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
+
+
+SEQN_7days = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% group_by(SEQN) %>% summarise(num = n()) %>% filter(num==7) %>% select(SEQN)
+MINdata = MINdata %>% filter(SEQN %in% SEQN_7days$SEQN)
 
 if(F){
   pca_model = prcomp(MINdata %>% select(-SEQN),
@@ -230,7 +237,7 @@ which(res_Rsquared==max(res_Rsquared))
 # ANOVA
 ```{r}
 models = list()
-for (i in 1:15){
+for (i in 1:12){
   PCnames = paste('PC',1:i,sep = '')
   y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
   set.seed(111)
@@ -260,7 +267,7 @@ do.call(anova,models)
 ```{r}
 rm(list =ls())
 load(file = 'analyticData.rda')
-PCnames = paste('PC',1:5,sep = '')
+PCnames = paste('PC',1:8,sep = '')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 y = Y
 yTrue = y$BMI
