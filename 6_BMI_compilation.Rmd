@@ -62,7 +62,7 @@ cbind(
 }
 
 
-stats::screeplot(pca_model)
+
 
 analyticData = data.frame(SEQN=MINdata$SEQN,
                           pca_model$x) %>% 
@@ -79,6 +79,8 @@ analyticData = analyticData %>% filter(15 <BMI & BMI< 40)
 
 
 save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
+library(factoextra)
+fviz_eig(pca_model)
 ```
 
 
@@ -206,13 +208,15 @@ ggplot(data.frame(res_RMSE)) +
   aes(x = 1:length(res_RMSE), y = res_RMSE) +
   geom_line()+
   # geom_smooth(se = TRUE, method = 'lm')+
-  geom_smooth(se = TRUE, method =  'auto',color = 'blue')
+  geom_smooth(se = TRUE, method =  'auto',color = 'blue') +
+  labs(x = 'Number of PCs in Cross-Validation',y = 'RMSE')
 
 ggplot(data.frame(res_Rsquared)) + 
   aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
   geom_line()+
   # geom_smooth(se = TRUE, method = 'lm')+
-  geom_smooth(se = TRUE, method =  'auto',color = 'blue')
+  geom_smooth(se = TRUE, method =  'auto',color = 'blue') + 
+  labs(x = 'Number of PCs in Cross-Validation',y = 'R-squared')
 
 which(res_RMSE==min(res_RMSE))
 which(res_Rsquared==max(res_Rsquared))
