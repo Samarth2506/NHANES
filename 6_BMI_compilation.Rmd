@@ -1,3 +1,5 @@
+
+
 # Prepross
 ```{r include=F,warning=FALSE,message=FALSE}
 # rm(list = ls())
@@ -18,11 +20,6 @@ if(T){
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 ```
-
-```{r}
-table(Covariate_D %>% filter(SEQN %in% analyticData$SEQN) %>% select(BMI_cat))
-```
-
 
 
 
@@ -79,8 +76,7 @@ analyticData = analyticData %>% filter(15 <BMI & BMI< 40)
 
 
 save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
-library(factoextra)
-fviz_eig(pca_model)
+
 ```
 
 
@@ -163,7 +159,8 @@ gs = lapply(1:8, function(i) {
 # grid.arrange(grobs = gs,nrow = 3)
 do.call(grid.arrange,c(gs,nrow = 3))
 
-
+library(factoextra)
+fviz_eig(pca_model)
 
 ```
 
@@ -200,14 +197,14 @@ g1 = ggplot(data.frame(res_RMSE)) +
   geom_line()+
   # geom_smooth(se = TRUE, method = 'lm')+
   geom_smooth(se = TRUE, method =  'auto',color = 'blue') +
-  labs(x = 'Number of PCs in Cross-Validation',y = 'RMSE')
+  labs(x = 'Number of Principal Components in Cross-Validation',y = 'Root Mean Square Error ')
 
 g2 = ggplot(data.frame(res_Rsquared)) + 
   aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
   geom_line()+
   # geom_smooth(se = TRUE, method = 'lm')+
   geom_smooth(se = TRUE, method =  'auto',color = 'blue') + 
-  labs(x = 'Number of PCs in Cross-Validation',y = 'R-squared')
+  labs(x = 'Number of Principal Components in Cross-Validation',y = 'R-squared')
 
 which(res_RMSE==min(res_RMSE))
 which(res_Rsquared==max(res_Rsquared))
@@ -239,6 +236,8 @@ for (i in 1:12){
 # fit3 = lm(BMI ~., data = y, subset = trainidx)
 
 do.call(anova,models)
+
+# print(xtable(anova(model)))
 ```
 
 
@@ -288,7 +287,7 @@ yTrue = yTrue[-trainidx]
 result = cbind(yPred,
                yTrue) %>% as.data.frame() %>% na.omit()
 # MSE of yPred and yTrue
-mean((yPred-yTrue)^2)
+# mean((yPred-yTrue)^2)
 # mean((result[,1]-result[,2])^2)
 
 ggplot(data=result , aes(x = 1:dim(result)[1])) + 
@@ -301,13 +300,25 @@ ggplot(data=result , aes(x = 1:dim(result)[1])) +
 ggplot(data = result) + 
   aes(x = yTrue, y = yPred) +
   geom_point()+
-  geom_smooth(se = TRUE, method = 'lm')+
-  geom_smooth(se = TRUE, method =  'auto',color = 'red')
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto',color = 'red') +
+  labs(y = 'Predicted BMI', x = 'Actual BMI') +
+  theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=20))
 
 # plot(fit2,which = 1,main = "interaction term added")
 plot(fit,which = 1)
 ```
 
+```{r}
+library(pixiedust)
+dust(fit) %>% 
+  sprinkle(cols = c("estimate", "std.error", "statistic"), round = 3) %>%
+      sprinkle(cols = "p.value", fn = quote(pvalString(value))) %>% 
+      sprinkle_colnames("Term", "Coefficient", "SE", "T-statistic", 
+                        "P-value")
+
+```
 
 
 
