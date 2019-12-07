@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 #find ./* -size +100M | cat >> .gitignore
+
+# How to use: double-click OR run the following command
+# ./gitpull.sh "Customize your own commitment"
+
 git pull
 git add .
-git commit -m ${1:-"Luchao's default auto-commitment using gitpull.sh"}
-git push
-
-#/bin/bash
+git commit -m "${1:-Luchao"'"s auto-commitment using gitpull.sh}"
+git push origin master
