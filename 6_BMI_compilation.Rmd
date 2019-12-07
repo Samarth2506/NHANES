@@ -16,6 +16,7 @@ if(T){
   library(mgcv)
   library(boot)
   library(car)
+  library(sjPlot)
   # library(PCAtools)
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
@@ -266,7 +267,8 @@ fit = lm(BMI ~ .,data = y, subset = trainidx)
 summary(fit)
 # summary(fit2)
 
-avPlots(glm(BMI ~ .,data = y, subset = trainidx),ask = FALSE)
+# library(car)
+# avPlots(glm(BMI ~ .,data = y, subset = trainidx),ask = FALSE)
 if(F){
 vif(fit)
 }
@@ -320,6 +322,16 @@ dust(fit) %>%
 
 ```
 
+```{r message=F}
+# library(sjmisc)
+# library(sjlabelled)
+
+library(sjPlot)
+tab_model(fit,
+          ci.hyphen = ", ",
+          string.ci = "CI (95%)",
+          string.p = "P-Value")
+```
 
 
 # try different window size
