@@ -198,14 +198,14 @@ g1 = ggplot(data.frame(res_RMSE)) +
   geom_line()+
   # geom_smooth(se = TRUE, method = 'lm')+
   geom_smooth(se = TRUE, method =  'auto',color = 'blue') +
-  labs(x = 'Number of Principal Components in Cross-Validation',y = 'Root Mean Square Error ')
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ')
 
 g2 = ggplot(data.frame(res_Rsquared)) + 
   aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
   geom_line()+
   # geom_smooth(se = TRUE, method = 'lm')+
   geom_smooth(se = TRUE, method =  'auto',color = 'blue') + 
-  labs(x = 'Number of Principal Components in Cross-Validation',y = 'R-squared')
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'R-squared')
 
 which(res_RMSE==min(res_RMSE))
 which(res_Rsquared==max(res_Rsquared))
@@ -310,6 +310,21 @@ ggplot(data = result) +
 
 # plot(fit2,which = 1,main = "interaction term added")
 plot(fit,which = 1)
+
+
+if(F){
+  
+PCnames = paste('PC',1:8,sep = '')
+Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+y = Y
+yTrue = y$BMI
+set.seed(111)
+trainidx = sample(nrow(y),0.7*nrow(y))
+fit2 = lm(BMI ~ .,data = y, subset = trainidx)
+
+}
+
+
 ```
 
 ```{r}
@@ -330,7 +345,17 @@ library(sjPlot)
 tab_model(fit,
           ci.hyphen = ", ",
           string.ci = "CI (95%)",
-          string.p = "P-Value")
+          string.p = "P-Value",
+          dv.labels = "Regression Model using the first 12 PCs")
+tab_model(fit2,
+          ci.hyphen = ", ",
+          string.ci = "CI (95%)",
+          string.p = "P-Value",
+          dv.labels = "Regression Model using the first 8 PCs")
+
+tab_model(fit,fit2,
+          dv.labels = c("Regression Model using the first 12 PCs",
+                        "Regression Model using the first 8 PCs"))
 ```
 
 
