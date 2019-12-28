@@ -172,26 +172,42 @@ fviz_eig(pca_model)
 rm(list = ls())
 load(file = 'analyticData.rda')
 library(gridExtra)
+
+res_RMSE = c()
+res_Rsquared = c()
+if(F){
+for(i in 1:100){
+  PCnames = paste('PC',1:i,sep = '')
+  train.control <- trainControl(method = "cv", number = 10)
+  dat = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)]
+  model <- caret::train(BMI ~., data = dat, method = "lm",
+               trControl = train.control)
+  res_RMSE = c(res_RMSE, model$results$RMSE)
+  res_Rsquared = c(res_Rsquared, model$results$Rsquared)
+ 
+}
+  save(res_RMSE,res_Rsquared, file = 'CV_100PCs.rda')
+}
+
+
+
+
 res_RMSE = c()
 res_Rsquared = c()
 if(F){
 for(i in 1:50){
   PCnames = paste('PC',1:i,sep = '')
-  data_ctrl = trainControl(method = 'cv',number =10)
+  train.control <- trainControl(method = "cv", number = 10)
   dat = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)]
-  # dat$BMI = log(dat$BMI + 1) # 
-  model = caret::train(BMI~.,
-                data= dat,
-                trControl = data_ctrl,
-                method = 'lm',
-                na.action = na.pass
-                )
-  res_RMSE = c(res_RMSE,mean(model$resample$RMSE))
-  res_Rsquared = c(res_Rsquared,mean(model$resample$Rsquared))
+  model <- caret::train(BMI ~., data = dat, method = "lm",
+               trControl = train.control)
+  res_RMSE = c(res_RMSE, model$results$RMSE)
+  res_Rsquared = c(res_Rsquared, model$results$Rsquared)
   
 }
   save(res_RMSE,res_Rsquared, file = 'CV_50PCs.rda')
 }
+
 load(file = 'CV_50PCs.rda')
 g1 = ggplot(data.frame(res_RMSE)) + 
   aes(x = 1:length(res_RMSE), y = res_RMSE) +
@@ -215,7 +231,7 @@ grid.arrange(g1,g2)
 # ANOVA
 ```{r}
 models = list()
-for (i in 1:12){
+for (i in 1:14){
   PCnames = paste('PC',1:i,sep = '')
   y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
   set.seed(111)
@@ -247,7 +263,7 @@ do.call(anova,models)
 ```{r}
 rm(list =ls())
 load(file = 'analyticData.rda')
-PCnames = paste('PC',1:12,sep = '')
+PCnames = paste('PC',1:14,sep = '')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 y = Y
 yTrue = y$BMI
@@ -346,7 +362,7 @@ tab_model(fit,
           ci.hyphen = ", ",
           string.ci = "CI (95%)",
           string.p = "P-Value",
-          dv.labels = "Regression Model using the first 12 PCs")
+          dv.labels = "Regression Model using the first 14 PCs")
 tab_model(fit2,
           ci.hyphen = ", ",
           string.ci = "CI (95%)",
@@ -354,7 +370,7 @@ tab_model(fit2,
           dv.labels = "Regression Model using the first 8 PCs")
 
 tab_model(fit,fit2,
-          dv.labels = c("Regression Model using the first 12 PCs",
+          dv.labels = c("Regression Model using the first 14 PCs",
                         "Regression Model using the first 8 PCs"))
 ```
 
