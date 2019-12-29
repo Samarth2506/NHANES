@@ -17,6 +17,7 @@ if(T){
   library(boot)
   library(car)
   library(sjPlot)
+  library(gridExtra)
   # library(PCAtools)
 }
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
@@ -171,7 +172,7 @@ fviz_eig(pca_model)
 ```{r}
 rm(list = ls())
 load(file = 'analyticData.rda')
-library(gridExtra)
+
 
 res_RMSE = c()
 res_Rsquared = c()
@@ -239,18 +240,7 @@ for (i in 1:14){
   model = lm(BMI ~., data = y, subset = trainidx)
   models = c(models,list(model))
 }
-# PCnames = paste('PC',1:3,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit0 = lm(BMI ~., data = y, subset = trainidx)
-# PCnames = paste('PC',1:5,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit1 = lm(BMI ~., data = y, subset = trainidx)
-# PCnames = paste('PC',1:10,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit2 = lm(BMI ~., data = y, subset = trainidx)
-# PCnames = paste('PC',1:13,sep = '')
-# y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-# fit3 = lm(BMI ~., data = y, subset = trainidx)
+
 
 do.call(anova,models)
 
@@ -328,7 +318,7 @@ ggplot(data = result) +
 plot(fit,which = 1)
 
 
-if(F){
+if(T){
   
 PCnames = paste('PC',1:8,sep = '')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
