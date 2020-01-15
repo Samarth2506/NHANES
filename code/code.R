@@ -1,12 +1,12 @@
-library(rnhanesdata)
-library(tidyverse)
-
-
 rm(list = ls())
 
 
+library(rnhanesdata)
+library(tidyverse)
+
 ###################################################
 # preprocess
+
 
 # select 'good' data
 keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
