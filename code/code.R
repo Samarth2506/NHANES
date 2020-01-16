@@ -1,13 +1,11 @@
 rm(list = ls())
-
-
-library(rnhanesdata)
 library(tidyverse)
 
 ###################################################
 # preprocess
 
 
+library(rnhanesdata)
 # select 'good' data
 keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
 accel_good_D <- PAXINTEN_D[keep_inx,] 
@@ -56,23 +54,16 @@ save(analyticData, file = 'analyticData.rda')
 
 rm(list = ls())
 load(file = 'analyticData.rda')
-Y = analyticData
+
+# choose first 5 principal components to explore associations
 PCnames = paste('PC',1:5,sep = '')
 y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-colnames(y)
-if(F){
-  fit = randomForest(BMI ~ ., data = y,ntree = 501,
-                     importance = T)
-  save(fit,file = 'rffit.rda')
-}
-load(file = 'rffit.rda')
-varImpPlot(fit)
 
-importance(fit)
 
+# correlation anaysis
+# change factor (Race/Gender) to numeric
 y_cor <- as.data.frame(
   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
-
 res_cor = cor(y_cor)
 library(corrplot)
 corrplot(res_cor,
@@ -82,6 +73,19 @@ corrplot(res_cor,
          addCoef.col = "black",
          diag = F)
 
+# rank variable importance using randomforest
+if(F){
+  library(randomForest)
+  fit = randomForest(BMI ~ ., data = y,ntree = 501,
+                     importance = T)
+  save(fit,file = 'rffit.rda')
+}
+load(file = 'rffit.rda')
+varImpPlot(fit)
+
+# importance(fit)
+
+###################################################
 
 
 
