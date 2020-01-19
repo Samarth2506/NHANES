@@ -16,7 +16,6 @@ flags_good_D <- Flags_D[keep_inx,]
 SEQN_7days = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% 
   group_by(SEQN) %>% summarise(num = n()) %>% filter(num==7) %>% select(SEQN)
 
-
 # dot multiply bwtween flag matrix and activity count matrix 
 # average over days
 MIN_name = grep('MIN',colnames(accel_good_D),value = T)
