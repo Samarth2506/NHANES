@@ -360,6 +360,8 @@ tab_model(fit2,
           dv.labels = "Regression Model using the first 8 PCs")
 
 tab_model(fit,fit2,
+          ci.hyphen = ", ",
+          show.ci = FALSE,
           dv.labels = c("Regression Model using the first 14 PCs",
                         "Regression Model using the first 8 PCs"))
 ```
