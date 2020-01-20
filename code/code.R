@@ -73,8 +73,8 @@ corrplot(res_cor,
          diag = F)
 
 # rank variable importance using randomforest
+library(randomForest)
 if(F){
-  library(randomForest)
   fit = randomForest(BMI ~ ., data = y,ntree = 501,
                      importance = T)
   save(fit,file = 'rffit.rda')
