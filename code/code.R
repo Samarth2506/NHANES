@@ -167,8 +167,70 @@ do.call(anova,models)
 
 
 ###################################################
-# prediction
+# model construction
+# choose the first 14 PCs
+
+rm(list =ls())
+load(file = 'analyticData.rda')
+PCnames = paste('PC',1:8,sep = '')
+y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+yTrue = y$BMI
+
+set.seed(111)
+trainidx = sample(nrow(y),0.7*nrow(y))
+
+fit = lm(BMI ~ .,data = y, subset = trainidx)
+summary(fit)
+
+yPred = predict(fit,y[-trainidx,])
+yTrue = yTrue[-trainidx]
+result = cbind(yPred,
+               yTrue) %>% as.data.frame() %>% na.omit()
+
+ggplot(data=result , aes(x = 1:dim(result)[1])) + 
+  geom_line(aes(y = yPred),color = 'red') + 
+  geom_line(aes(y = yTrue),color = 'blue') +
+  labs(x = 'Patients', y = 'BMI',
+       title  = "PCs + Age + Race + Gender")
+
+ggplot(data = result) + 
+  aes(x = yTrue, y = yPred) +
+  geom_point()+
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto',color = 'red') +
+  labs(y = 'Predicted BMI', x = 'Actual BMI') +
+  theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=20))
+
+plot(fit,which = 1)
+
+
+# choose the first 14 PCs
+PCnames = paste('PC',1:14,sep = '')
+y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+yTrue = y$BMI
+set.seed(111)
+trainidx = sample(nrow(y),0.7*nrow(y))
+fit2 = lm(BMI ~ .,data = y, subset = trainidx)
 
 
 
 
+# plot table
+library(sjPlot)
+tab_model(fit,
+          ci.hyphen = ", ",
+          string.ci = "CI (95%)",
+          string.p = "P-Value",
+          dv.labels = "Regression Model using the first 14 PCs")
+tab_model(fit2,
+          ci.hyphen = ", ",
+          string.ci = "CI (95%)",
+          string.p = "P-Value",
+          dv.labels = "Regression Model using the first 8 PCs")
+
+tab_model(fit,fit2,
+          ci.hyphen = ", ",
+          show.ci = FALSE,
+          dv.labels = c("Regression Model using the first 14 PCs",
+                        "Regression Model using the first 8 PCs"))
