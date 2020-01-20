@@ -85,6 +85,84 @@ varImpPlot(fit)
 # importance(fit)
 
 ###################################################
+# plot PC loadings and screeplot of PCA results
+rm(list = ls())
+load(file = 'pca_model.rda')
+
+library(factoextra)
+fviz_eig(pca_model)
+
+temp = pca_model$rotation %>% data.frame()
+
+gs = lapply(1:8, function(i) {
+  ggplot(temp) + 
+    aes(x = 1:nrow(temp)/60,y = unlist(temp[,i])) + 
+    geom_line() +
+    labs(x = "Time of Day", y = paste0("Loadings on PC",i)) +
+    theme(axis.title.y = element_text(size = rel(0.9)))
+})
+library(gridExtra)
+do.call(grid.arrange,c(gs,nrow = 3))
+
+###################################################
+# cross validation
+
+rm(list = ls())
+library(caret)
+load(file = 'analyticData.rda')
+res_RMSE = c()
+res_Rsquared = c()
+if(F){
+  for(i in 1:50){
+    PCnames = paste('PC',1:i,sep = '')
+    train.control <- trainControl(method = "cv", number = 10)
+    dat = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)]
+    model <- caret::train(BMI ~., data = dat, method = "lm",
+                          trControl = train.control)
+    res_RMSE = c(res_RMSE, model$results$RMSE)
+    res_Rsquared = c(res_Rsquared, model$results$Rsquared)
+    
+  }
+  save(res_RMSE,res_Rsquared, file = 'CV_50PCs.rda')
+}
+
+load(file = 'CV_50PCs.rda')
+g1 = ggplot(data.frame(res_RMSE)) + 
+  aes(x = 1:length(res_RMSE), y = res_RMSE) +
+  geom_line()+
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto',color = 'blue') +
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ')
+
+g2 = ggplot(data.frame(res_Rsquared)) + 
+  aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
+  geom_line()+
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto',color = 'blue') + 
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'R-squared')
+
+which(res_RMSE==min(res_RMSE))
+which(res_Rsquared==max(res_Rsquared))
+grid.arrange(g1,g2)
+
+
+
+###################################################
+# ANOVA
+rm(list = ls())
+load(file = 'analyticData.rda')
+models = list()
+for (i in 1:14){
+  PCnames = paste('PC',1:i,sep = '')
+  y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+  set.seed(111)
+  trainidx = sample(nrow(y),0.7*nrow(y))
+  model = lm(BMI ~., data = y, subset = trainidx)
+  models = c(models,list(model))
+}
+
+
+do.call(anova,models)
 
 
 
