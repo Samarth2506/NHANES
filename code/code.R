@@ -13,12 +13,12 @@ flags_good_D <- Flags_D[keep_inx,]
 
 
 # participants' ID wearing monitor for 7 consecutive days
+MIN_name = grep('MIN',colnames(accel_good_D),value = T)
 SEQN_7days = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% 
   group_by(SEQN) %>% summarise(num = n()) %>% filter(num==7) %>% select(SEQN)
 
 # dot multiply bwtween flag matrix and activity count matrix 
 # average over days
-MIN_name = grep('MIN',colnames(accel_good_D),value = T)
 MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
   group_by(SEQN) %>% summarise_each(funs(mean)) %>% 
   filter(SEQN %in% SEQN_7days$SEQN) %>% na.omit()
