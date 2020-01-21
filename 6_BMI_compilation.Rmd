@@ -227,7 +227,7 @@ g2 = ggplot(data.frame(res_Rsquared)) +
 
 which(res_RMSE==min(res_RMSE))
 which(res_Rsquared==max(res_Rsquared))
-grid.arrange(g1,g2)
+gridExtra::grid.arrange(g1,g2)
 
 ```
 # ANOVA
