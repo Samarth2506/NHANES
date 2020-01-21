@@ -191,7 +191,8 @@ for(i in 1:100){
 }
 
 
-
+rm(list = ls())
+load(file = 'analyticData.rda')
 
 res_RMSE = c()
 res_Rsquared = c()
