@@ -54,12 +54,10 @@ save(analyticData, file = 'analyticData.rda')
 rm(list = ls())
 load(file = 'analyticData.rda')
 
-# choose first 5 principal components to explore associations
+# correlation anaysis
 PCnames = paste('PC',1:5,sep = '')
 y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 
-
-# correlation anaysis
 # change factor (Race/Gender) to numeric
 y_cor <- as.data.frame(
   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
