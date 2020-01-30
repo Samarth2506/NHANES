@@ -23,7 +23,13 @@ MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flag
 
 
 
+```
+
+
+
 # pincipal component analysis
+```{r}
+
 if(F){
   pca_model = prcomp(MINdata %>% select(-SEQN),
                      center = T,
@@ -48,7 +54,8 @@ analyticData = data.frame(SEQN=MINdata$SEQN,
 analyticData = analyticData %>% filter(15 <BMI & BMI< 40)
 save(analyticData, file = 'analyticData.rda')
 
-
-
 ```
+
+
+
 
