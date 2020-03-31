@@ -106,7 +106,7 @@ corrplot(res_cor,
 # rank variable importance using randomforest
 library(randomForest)
 if(F){
-  fit = randomForest(BMI ~ ., data = y,ntree = 501,
+  fit = randomForest(BMI ~ ., data = y,
                      importance = T)
   save(fit,file = 'rffit.rda')
 }
