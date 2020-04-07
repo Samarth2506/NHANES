@@ -102,6 +102,9 @@ corrplot(res_cor,
          order = 'hclust',
          addCoef.col = "black",
          diag = F)
+         
+
+
 
 # rank variable importance using randomforest
 library(randomForest)
@@ -116,6 +119,7 @@ varImpPlot(fit)
 
 
 ```
+
 
 
 # cross validation
@@ -135,9 +139,10 @@ if(F){
                           trControl = train.control)
     res_RMSE = c(res_RMSE, model$results$RMSE)
     res_Rsquared = c(res_Rsquared, model$results$Rsquared)
-    
   }
-  save(res_RMSE,res_Rsquared, file = 'CV_50PCs.rda')
+  which(res_RMSE==min(res_RMSE))
+  which(res_Rsquared==max(res_Rsquared))
+  save(model,res_RMSE,res_Rsquared, file = 'CV_50PCs.rda')
 }
 
 load(file = 'CV_50PCs.rda')
