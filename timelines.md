@@ -269,10 +269,6 @@ Cross-validation
 
 
 
-![random_forest_before_smooth](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/random_forest_before_smooth.png?raw=true)
-
-![residuals](https://github.com/LuchaoQi/rnhanesdata/blob/master/reports/residuals.png?raw=true)
-
 ### interaction term
 
 ```R
