@@ -115,7 +115,8 @@ if(F){
 }
 load(file = 'rffit.rda')
 importance(fit)
-varImpPlot(fit)
+varImpPlot(fit,
+           main = 'Variable Importance Measured by Random Forest')
 
 
 ```
