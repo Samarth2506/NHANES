@@ -64,7 +64,8 @@ rm(list = ls())
 load(file = 'pca_model.rda')
 
 library(factoextra)
-fviz_eig(pca_model)
+fviz_eig(pca_model,
+         main = 'PCA Scree Plot of Physical Activity Data')
 
 temp = pca_model$rotation %>% data.frame()
 
