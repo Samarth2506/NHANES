@@ -95,20 +95,30 @@ y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 # change factor (Race/Gender) to numeric
 y_cor <- as.data.frame(
   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
-res_cor = cor(y_cor)
-library(corrplot)
-        
-corrplot(res_cor,
-         metho = 'color',
-         type = 'upper',
-         order = 'original',
-         addCoef.col = "black",
-         diag = F,
-         tl.srt = 30,
-         mar=c(0,0,5,0),
-         title = "Pearson’s Correlation Analysis between BMI, Covariates and Physical Activity")
-# mtext("Pearson’s Correlation Analysis between BMI, Covariates and Physical Activity", at=5, line=1.5, cex=1.5)
 
+
+library(ggcorrplot)
+ggcorrplot(cor(y_cor), 
+             # hc.order = TRUE,
+             # type = "upper",
+           lab = T,
+           tl.cex = 15,
+           # p.mat = cor_pmat(y_cor),
+           title = "Pearson’s Correlation Analysis between \n BMI, Covariates and Physical Activity") + 
+  labs(caption = 'Note. RIDAGEYR - Age in years at screening.') + 
+  theme(plot.title = element_text(size = 20),
+        plot.caption = element_text(size = 15))
+
+# res_cor = cor(y_cor)
+# library(corrplot)
+# corrplot(res_cor,
+#          metho = 'color',
+#          # type = 'lower',
+#          order = 'original',
+#          addCoef.col = "black",
+#          # diag = F,
+#          mar=c(0,0,1,0),
+#          title = "Pearson’s Correlation Analysis between BMI, Covariates and Physical Activity")
 
 
 # rank variable importance using randomforest
