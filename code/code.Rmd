@@ -97,13 +97,17 @@ y_cor <- as.data.frame(
   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
 res_cor = cor(y_cor)
 library(corrplot)
+        
 corrplot(res_cor,
          metho = 'color',
          type = 'upper',
-         order = 'hclust',
+         order = 'original',
          addCoef.col = "black",
-         diag = F)
-         
+         diag = F,
+         tl.srt = 30,
+         mar=c(0,0,5,0),
+         title = "Pearson’s Correlation Analysis between BMI, Covariates and Physical Activity")
+# mtext("Pearson’s Correlation Analysis between BMI, Covariates and Physical Activity", at=5, line=1.5, cex=1.5)
 
 
 
