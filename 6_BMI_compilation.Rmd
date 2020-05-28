@@ -1,25 +1,24 @@
 
 
-# Prepross
 ```{r include=F,warning=FALSE,message=FALSE}
 # rm(list = ls())
-if(T){
-  library(rnhanesdata)
-  library(tidyverse)
-  library(magrittr)
-  library(data.table)
-  library(randomForest)
-  library(caret)
-  library(keras)
-  library(tensorflow)
-  library(caTools)
-  library(mgcv)
-  library(boot)
-  library(car)
-  library(sjPlot)
-  library(gridExtra)
-  # library(PCAtools)
-}
+
+library(rnhanesdata)
+library(tidyverse)
+library(magrittr)
+library(data.table)
+library(randomForest)
+library(caret)
+library(keras)
+library(tensorflow)
+library(caTools)
+library(mgcv)
+library(boot)
+library(car)
+library(sjPlot)
+library(gridExtra)
+# library(PCAtools)
+
 # https://wwwn.cdc.gov/Nchs/Nhanes/2005-2006/PAXRAW_D.htm
 ```
 
@@ -82,12 +81,12 @@ save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
 ```
 
 
-# PCA tools
+# PCA
 ```{r}
-  # pca_model = prcomp(MINdata %>% select(-SEQN),
-  #                    center = T,
-  #                    scale. = T)
-  # save(pca_model,file= 'pca_model.rda')
+  pca_model = prcomp(MINdata %>% select(-SEQN),
+                     center = T,
+                     scale. = T)
+  save(pca_model,file= 'pca_model.rda')
 if(F){
 load(file = 'analyticData.rda')
 
@@ -144,7 +143,7 @@ corrplot(res_cor,
 ```
 
 
-# loadings
+# PCA results visualization
 ```{r}
 library(gridExtra)
 load(file = 'pca_model.rda')
@@ -250,7 +249,7 @@ do.call(anova,models)
 
 
 
-# PCs + nutrition info
+# Linear regression
 ```{r}
 rm(list =ls())
 load(file = 'analyticData.rda')
@@ -333,17 +332,18 @@ fit2 = lm(BMI ~ .,data = y, subset = trainidx)
 
 ```
 
+
 ```{r}
-library(pixiedust)
-dust(fit) %>% 
-  sprinkle(cols = c("estimate", "std.error", "statistic"), round = 3) %>%
-      sprinkle(cols = "p.value", fn = quote(pvalString(value))) %>% 
-      sprinkle_colnames("Term", "Coefficient", "SE", "T-statistic", 
-                        "P-value")
+# library(pixiedust)
+# dust(fit) %>% 
+#   sprinkle(cols = c("estimate", "std.error", "statistic"), round = 3) %>%
+#       sprinkle(cols = "p.value", fn = quote(pvalString(value))) %>% 
+#       sprinkle_colnames("Term", "Coefficient", "SE", "T-statistic", 
+#                         "P-value")
 
 ```
 
-# plot table
+# Plot Table
 ```{r message=F}
 # library(sjmisc)
 # library(sjlabelled)
@@ -368,6 +368,11 @@ tab_model(fit,fit2,
 ```
 
 
+
+#
+
+
+# garbage code
 # try different window size
 ```{r}
 if(F){

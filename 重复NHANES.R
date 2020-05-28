@@ -20,6 +20,7 @@ while(TRUE){
   if (
     (which(res_RMSE==min(res_RMSE)) == 14)&(which(res_Rsquared==max(res_Rsquared)) == 14)
   ){
+    save(res_RMSE,res_Rsquared, file = 'CV_50PCs.rda')
     print('yes')
     break
   }
