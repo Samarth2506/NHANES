@@ -250,16 +250,34 @@ do.call(anova,models)
 
 
 # Linear regression
+
+
 ```{r}
 rm(list =ls())
 load(file = 'analyticData.rda')
+
+
+PCnames = paste('PC',1:8,sep = '')
+Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
+y = Y
+yTrue = y$BMI
+set.seed(111)
+trainidx = sample(nrow(y),0.7*nrow(y))
+fit2 = lm(BMI ~ .,data = y, subset = trainidx)
+
+
+
+
+
+
+
 PCnames = paste('PC',1:14,sep = '')
 Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 y = Y
 yTrue = y$BMI
 # y = as.data.frame(lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.factor() else x))
-set.seed(111)
-trainidx = sample(nrow(y),0.7*nrow(y))
+# set.seed(111)
+# trainidx = sample(nrow(y),0.7*nrow(y))
 
 
 # y$BMI = log(y$BMI +1)
@@ -294,9 +312,11 @@ yPred = predict(fit,y[-trainidx,])
 yTrue = yTrue[-trainidx]
 result = cbind(yPred,
                yTrue) %>% as.data.frame() %>% na.omit()
+
 # MSE of yPred and yTrue
 # mean((yPred-yTrue)^2)
-# mean((result[,1]-result[,2])^2)
+
+
 
 ggplot(data=result , aes(x = 1:dim(result)[1])) + 
   geom_line(aes(y = yPred),color = 'red') + 
@@ -319,18 +339,22 @@ plot(fit,which = 1)
 
 
 
-PCnames = paste('PC',1:8,sep = '')
-Y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
-y = Y
-yTrue = y$BMI
-set.seed(111)
-trainidx = sample(nrow(y),0.7*nrow(y))
-fit2 = lm(BMI ~ .,data = y, subset = trainidx)
-
-
-
 
 ```
+
+
+# Linear regression results
+
+```{r}
+plot(yPred, yTrue)
+
+# MSE
+mean((result[,1]-result[,2])^2)
+
+# cor
+cor(result[,1], result[,2])
+```
+
 
 
 ```{r}
@@ -369,8 +393,103 @@ tab_model(fit,fit2,
 
 
 
-#
+# CNN
 
+# data processing
+```{r}
+load('analyticData.rda')
+library(rnhanesdata)
+keep_inx <- exclude_accel(act = PAXINTEN_D, flags = Flags_D)
+accel_good_D <- PAXINTEN_D[keep_inx,] 
+flags_good_D <- Flags_D[keep_inx,]
+
+
+MIN_name = grep('MIN',colnames(accel_good_D),value = T)
+MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
+  group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
+
+
+SEQN_7days = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% group_by(SEQN) %>% summarise(num = n()) %>% filter(num==7) %>% select(SEQN)
+MINdata = MINdata %>% filter(SEQN %in% SEQN_7days$SEQN)
+
+
+
+MINdata= MINdata %>% 
+  inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
+  na.omit() 
+
+MINdata = MINdata[MINdata$SEQN %in% analyticData$SEQN,]
+
+# save(MINdata,file='MINdata.rda')
+```
+
+# CNN model construction
+```{r}
+load('MINdata.rda')
+library(keras)
+library(caret)
+
+set.seed(000)
+trainIdx = sample(c(TRUE, FALSE), dim(analyticData)[1], replace = TRUE, prob = c(.7, .3))
+
+# y = log(MINdata$BMI + 1)
+y = MINdata$BMI
+x = MINdata %>% select(-BMI) %>% select(-SEQN)
+x = as.data.frame(lapply(x, function (x) if (is.factor(x)) unclass(x) else x))
+
+ytrain = y[trainIdx]
+xtrain = x[trainIdx, ] %>% scale()
+
+mns = attr(xtrain, "scaled:center")
+sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx]
+
+
+xtrain = array(xtrain, dim = c(nrow(xtrain), dim(xtrain)[2], 1))
+xtest = array(xtest, dim = c(nrow(xtest), dim(xtest)[2], 1))
+
+model = keras_model_sequential() %>%
+  layer_conv_1d(filters = 2^8, kernel_size = 2,
+               input_shape = c(dim(xtrain)[2:3]), activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_conv_1d(filters = 2^4, kernel_size = 2) %>% 
+  layer_flatten() %>%
+  layer_dense(units = 2^4, activation = "relu") %>%
+  layer_dense(units = 1, activation = "linear")
+
+# summary(model)
+
+model %>% compile(
+ loss = "mse",
+ optimizer = "adam",
+ metrics = list("mean_absolute_error")
+)
+
+history = model %>% fit(
+ xtrain,
+ ytrain,
+ epochs = 20,
+ validation_split = 0.2,
+ verbose = 1,
+)
+
+yPred = model %>% predict(xtest)
+```
+
+```{r}
+# yPred = exp(yPred)-1
+# ytest = exp(ytest)-1
+
+summary(model)
+
+plot(yPred, ytest)
+
+mean((yPred-ytest)^2)
+
+cor(yPred,ytest)
+```
 
 # garbage code
 # try different window size
