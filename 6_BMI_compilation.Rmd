@@ -410,17 +410,28 @@ MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flag
 
 
 SEQN_7days = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% group_by(SEQN) %>% summarise(num = n()) %>% filter(num==7) %>% select(SEQN)
-MINdata = MINdata %>% filter(SEQN %in% SEQN_7days$SEQN)
 
+MINdata = MINdata %>% filter(SEQN %in% SEQN_7days$SEQN)
 
 
 MINdata= MINdata %>% 
   inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
   na.omit() 
 
-MINdata = MINdata[MINdata$SEQN %in% analyticData$SEQN,]
 
-# save(MINdata,file='MINdata.rda')
+
+# 1440*7 = 10080 format
+
+MINdata_10080 = data.frame('SEQN' = accel_good_D[,'SEQN'], 'WEEKDAY' = accel_good_D[,'WEEKDAY'],accel_good_D[,6:dim(accel_good_D)[2]] * flags_good_D[,6:dim(accel_good_D)[2]]) %>% 
+  arrange(SEQN,WEEKDAY) %>%
+  reshape(idvar = "SEQN", timevar = "WEEKDAY",direction = "wide") %>% na.omit()
+MINdata_10080= MINdata_10080 %>% 
+  inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
+  na.omit() 
+
+MINdata_10080 = MINdata_10080 %>% filter(SEQN %in% SEQN_7days$SEQN)
+
+save(MINdata,MINdata_10080,file='MINdata.rda')
 ```
 
 # CNN model construction
@@ -430,7 +441,7 @@ library(keras)
 library(caret)
 
 set.seed(000)
-trainIdx = sample(c(TRUE, FALSE), dim(analyticData)[1], replace = TRUE, prob = c(.7, .3))
+trainIdx = sample(c(TRUE, FALSE), dim(MINdata)[1], replace = TRUE, prob = c(.7, .3))
 
 # y = log(MINdata$BMI + 1)
 y = MINdata$BMI
@@ -446,7 +457,8 @@ sds = attr(xtrain, "scaled:scale")
 xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
 ytest = y[!trainIdx]
 
-
+# we are using univariate time series data so number of feature is 1
+# for multivariate data e.g. activity signal on axis 1, axis 2, axis 3, then number of feature is 3 
 xtrain = array(xtrain, dim = c(nrow(xtrain), dim(xtrain)[2], 1))
 xtest = array(xtest, dim = c(nrow(xtest), dim(xtest)[2], 1))
 
