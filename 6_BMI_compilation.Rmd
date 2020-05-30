@@ -436,9 +436,15 @@ save(MINdata,MINdata_10080,file='MINdata.rda')
 
 # CNN model construction
 ```{r}
-load('MINdata.rda')
+
 library(keras)
 library(caret)
+load('MINdata.rda')
+
+
+MINdata = as.data.frame(lapply(MINdata, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
+
+# MINdata_10080 = MINdata_10080 %>% select(-Race,-Gender,-RIDAGEYR)
 
 set.seed(000)
 trainIdx = sample(c(TRUE, FALSE), dim(MINdata)[1], replace = TRUE, prob = c(.7, .3))
@@ -446,7 +452,6 @@ trainIdx = sample(c(TRUE, FALSE), dim(MINdata)[1], replace = TRUE, prob = c(.7, 
 # y = log(MINdata$BMI + 1)
 y = MINdata$BMI
 x = MINdata %>% select(-BMI) %>% select(-SEQN)
-x = as.data.frame(lapply(x, function (x) if (is.factor(x)) unclass(x) else x))
 
 ytrain = y[trainIdx]
 xtrain = x[trainIdx, ] %>% scale()
@@ -456,6 +461,8 @@ sds = attr(xtrain, "scaled:scale")
 
 xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
 ytest = y[!trainIdx]
+
+
 
 # we are using univariate time series data so number of feature is 1
 # for multivariate data e.g. activity signal on axis 1, axis 2, axis 3, then number of feature is 3 
@@ -494,6 +501,94 @@ yPred = model %>% predict(xtest)
 # yPred = exp(yPred)-1
 # ytest = exp(ytest)-1
 
+# summary(model)
+
+plot(yPred, ytest)
+
+mean((yPred-ytest)^2)
+
+cor(yPred,ytest)
+```
+
+
+
+# garbage code
+
+
+## CNN covariates
+```{r}
+library(keras)
+library(caret)
+load('MINdata.rda')
+
+
+covariates = MINdata %>% select(Race,Gender,RIDAGEYR)
+covariates = as.data.frame(lapply(covariates, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
+
+MINdata = as.data.frame(lapply(MINdata, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x)) %>% select(-Race,-Gender,-RIDAGEYR)
+
+# MINdata_10080 = MINdata_10080 %>% select(-Race,-Gender,-RIDAGEYR)
+
+set.seed(000)
+trainIdx = sample(c(TRUE, FALSE), dim(MINdata)[1], replace = TRUE, prob = c(.7, .3))
+
+# y = log(MINdata$BMI + 1)
+y = MINdata$BMI
+x = MINdata %>% select(-BMI) %>% select(-SEQN)
+
+ytrain = y[trainIdx]
+xtrain = x[trainIdx, ] %>% scale()
+
+mns = attr(xtrain, "scaled:center")
+sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx]
+
+xtrain = cbind(xtrain,covariates[trainIdx, ]) %>% as.matrix()
+# xtrain = lapply(xtrain,as.numeric) %>% as.data.frame()
+xtest = cbind(xtest,covariates[!trainIdx,]) %>% as.matrix()
+# xtest = lapply(xtest,as.numeric) %>% as.data.frame()
+
+# we are using univariate time series data so number of feature is 1
+# for multivariate data e.g. activity signal on axis 1, axis 2, axis 3, then number of feature is 3 
+xtrain = reticulate::array_reshape(xtrain, dim = c(nrow(xtrain), dim(xtrain)[2], 1))
+xtest = reticulate::array_reshape(xtest, dim = c(nrow(xtest), dim(xtest)[2], 1))
+
+model = keras_model_sequential() %>%
+  layer_conv_1d(filters = 2^8, kernel_size = 2,
+               input_shape = c(dim(xtrain)[2:3]), activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_conv_1d(filters = 2^4, kernel_size = 2) %>% 
+  layer_flatten() %>%
+  layer_dense(units = 2^4, activation = "relu") %>%
+  layer_dense(units = 1, activation = "linear")
+
+# summary(model)
+
+model %>% compile(
+ loss = "mse",
+ optimizer = "adam",
+ metrics = list("mean_absolute_error")
+)
+
+history = model %>% fit(
+ xtrain,
+ ytrain,
+ epochs = 20,
+ validation_split = 0.2,
+ verbose = 1,
+)
+
+yPred = model %>% predict(xtest)
+```
+
+
+
+```{r}
+# yPred = exp(yPred)-1
+# ytest = exp(ytest)-1
+
 summary(model)
 
 plot(yPred, ytest)
@@ -503,7 +598,8 @@ mean((yPred-ytest)^2)
 cor(yPred,ytest)
 ```
 
-# garbage code
+
+
 # try different window size
 ```{r}
 if(F){
