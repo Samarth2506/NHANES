@@ -152,12 +152,12 @@ score_sum = mutate(score,S = rowSums(score))
 
 temp = t(score[c(nrow(score), 1931, 1521),]) %>% as.data.frame()
 
-n = 200
+n = 100
 tmp = temp[1:n,]
 ggplot(tmp, aes(x = 1:n)) + 
   geom_line(aes(y = tmp[,1], color = "Average of Principal Component Scores")) + 
-  geom_line(aes(y = tmp[,2], color = "Participant with Highest Principal Component scores")) +
-  geom_line(aes(y = tmp[,3], color = 'Participant with Lowest Principal Component scores')) + 
+  geom_line(aes(y = tmp[,2], color = "Participant with Highest Average of Principal Component scores")) +
+  geom_line(aes(y = tmp[,3], color = 'Participant with Lowest Average of Principal Component scores')) + 
   labs(x = "Principal Component", y = "Principal Component Scores") +
   scale_colour_manual(name = 'Legend', values = c('blue','red','green'))
 
@@ -432,7 +432,13 @@ MINdata= MINdata %>%
   inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
   na.omit() 
 
+# 1440*7 format
 
+MINdata_1440 = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% as.data.frame() %>% na.omit()
+MINdata_1440 = MINdata_1440 %>% filter(SEQN %in% SEQN_7days$SEQN)
+MINdata_1440= MINdata_1440 %>% 
+  inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
+  na.omit() 
 
 # 1440*7 = 10080 format
 
@@ -445,7 +451,7 @@ MINdata_10080= MINdata_10080 %>%
 
 MINdata_10080 = MINdata_10080 %>% filter(SEQN %in% SEQN_7days$SEQN)
 
-save(MINdata,MINdata_10080,file='MINdata.rda')
+save(MINdata,MINdata_1440,MINdata_10080,file='MINdata.rda')
 ```
 
 # CNN model construction
@@ -456,16 +462,16 @@ library(caret)
 load('MINdata.rda')
 
 
-MINdata = as.data.frame(lapply(MINdata, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
+MINdata_1440 = as.data.frame(lapply(MINdata_1440, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
 
 # MINdata_10080 = MINdata_10080 %>% select(-Race,-Gender,-RIDAGEYR)
 
 set.seed(000)
-trainIdx = sample(c(TRUE, FALSE), dim(MINdata)[1], replace = TRUE, prob = c(.7, .3))
+trainIdx = sample(c(TRUE, FALSE), dim(MINdata_1440)[1], replace = TRUE, prob = c(.7, .3))
 
 # y = log(MINdata$BMI + 1)
-y = MINdata$BMI
-x = MINdata %>% select(-BMI) %>% select(-SEQN)
+y = MINdata_1440$BMI
+x = MINdata_1440 %>% select(-BMI) %>% select(-SEQN)
 
 ytrain = y[trainIdx]
 xtrain = x[trainIdx, ] %>% scale()
@@ -487,7 +493,13 @@ model = keras_model_sequential() %>%
   layer_conv_1d(filters = 2^8, kernel_size = 2,
                input_shape = c(dim(xtrain)[2:3]), activation = "relu") %>%
   layer_max_pooling_1d(pool_size = 2) %>%
-  layer_conv_1d(filters = 2^4, kernel_size = 2) %>% 
+  layer_dropout(0.5) %>%
+  # layer_conv_1d(filters = 2^8, kernel_size = 2, activation = "relu") %>% 
+  # layer_max_pooling_1d(pool_size = 2) %>%
+  # layer_dropout(0.5) %>%
+  layer_conv_1d(filters = 2^4, kernel_size = 2, activation = "relu") %>% 
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_dropout(0.5) %>%
   layer_flatten() %>%
   layer_dense(units = 2^4, activation = "relu") %>%
   layer_dense(units = 1, activation = "linear")
@@ -505,24 +517,20 @@ history = model %>% fit(
  ytrain,
  epochs = 20,
  validation_split = 0.2,
- verbose = 1,
+ # batch_size = 100,
+ verbose = 1
 )
 
 yPred = model %>% predict(xtest)
 ```
-
 ```{r}
-# yPred = exp(yPred)-1
-# ytest = exp(ytest)-1
-
-# summary(model)
-
 plot(yPred, ytest)
 
 mean((yPred-ytest)^2)
 
 cor(yPred,ytest)
 ```
+
 
 
 
