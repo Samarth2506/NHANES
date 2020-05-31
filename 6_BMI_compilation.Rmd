@@ -490,18 +490,14 @@ xtrain = array(xtrain, dim = c(nrow(xtrain), dim(xtrain)[2], 1))
 xtest = array(xtest, dim = c(nrow(xtest), dim(xtest)[2], 1))
 
 model = keras_model_sequential() %>%
-  layer_conv_1d(filters = 2^8, kernel_size = 2,
+  layer_conv_1d(filters = 2^9, kernel_size = 2,
                input_shape = c(dim(xtrain)[2:3]), activation = "relu") %>%
   layer_max_pooling_1d(pool_size = 2) %>%
-  layer_dropout(0.5) %>%
-  # layer_conv_1d(filters = 2^8, kernel_size = 2, activation = "relu") %>% 
-  # layer_max_pooling_1d(pool_size = 2) %>%
-  # layer_dropout(0.5) %>%
-  layer_conv_1d(filters = 2^4, kernel_size = 2, activation = "relu") %>% 
+  layer_conv_1d(filters = 2^4, kernel_size = 2, activation = "relu") %>%
   layer_max_pooling_1d(pool_size = 2) %>%
-  layer_dropout(0.5) %>%
   layer_flatten() %>%
   layer_dense(units = 2^4, activation = "relu") %>%
+  # layer_dropout(0.5) %>%
   layer_dense(units = 1, activation = "linear")
 
 # summary(model)
@@ -523,6 +519,8 @@ history = model %>% fit(
 
 yPred = model %>% predict(xtest)
 ```
+
+
 ```{r}
 plot(yPred, ytest)
 
