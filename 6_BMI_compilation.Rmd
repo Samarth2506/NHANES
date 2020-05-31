@@ -66,13 +66,8 @@ analyticData = data.frame(SEQN=MINdata$SEQN,
                           pca_model$x) %>% 
   inner_join(Covariate_D %>% select(SEQN,Race,Gender,RIDAGEYR,BMI),by = 'SEQN') %>% 
   na.omit() 
-# > quantile(analyticData$BMI,probs = 0.05)
-#      5% 
-# 15.9695 
-# > quantile(analyticData$BMI,probs = 0.95)
-#    95% 
-# 39.151
-analyticData = analyticData %>% filter(15 <BMI & BMI< 40)
+
+analyticData = analyticData %>% filter(5 <BMI & BMI< 50)
 
 
 
@@ -81,35 +76,9 @@ save(MIN_name,MINdata,analyticData,file = 'analyticData.rda')
 ```
 
 
+
+
 # PCA
-```{r}
-  pca_model = prcomp(MINdata %>% select(-SEQN),
-                     center = T,
-                     scale. = T)
-  save(pca_model,file= 'pca_model.rda')
-if(F){
-load(file = 'analyticData.rda')
-
-p <- pca(MINdata %>% select(-SEQN))
-horn <- parallelPCA(MINdata %>% select(-SEQN))
-horn$n
-# [1] 76
-elbow <- findElbowPoint(p$variance)
-elbow
-#   16 
-
-save(horn,elbow,file = 'PCAtools.rda')
-library(ggplot2)
-
-screeplot(p,
-  components = getComponents(p, 1:20),
-  vline = c(horn$n, elbow)) +
-  geom_text(aes(horn$n + 1, 50, label = "Horn's", vjust = -1)) +
-  geom_text(aes(elbow + 1, 50, label = "Elbow", vjust = -1))
-}
-```
-
-
 
 ```{r}
 rm(list = ls())
@@ -119,26 +88,28 @@ PCnames = paste('PC',1:5,sep = '')
 y = analyticData[,c('RIDAGEYR','Race','Gender','BMI',PCnames)] %>% na.omit()
 colnames(y)
 if(F){
-fit = randomForest(BMI ~ ., data = y,ntree = 501,
+fit = randomForest(BMI ~ ., data = y,ntree = 1500,
                    importance = T)
 save(fit,file = 'rffit.rda')
 }
 load(file = 'rffit.rda')
-varImpPlot(fit)
+library(randomForest)
+varImpPlot(fit,
+           main = 'Variable Importance Measured by Random Forest')
 
-importance(fit)
+# importance(fit)
 
 y_cor <- as.data.frame(
   lapply(y, function (x) if (is.factor(x)) unclass(x) %>% as.numeric  else x))
 
-res_cor = cor(y_cor)
-library(corrplot)
-corrplot(res_cor,
-         metho = 'color',
-         type = 'upper',
-         order = 'hclust',
-         addCoef.col = "black",
-         diag = F)
+library(ggcorrplot)
+ggcorrplot(cor(y_cor), 
+           lab = T,
+           tl.cex = 15,
+           title = "Pearson’s Correlation Analysis between \n BMI, Covariates and Physical Activity") + 
+  labs(caption = 'Note. RIDAGEYR - Age in years at screening.') + 
+  theme(plot.title = element_text(size = 20),
+        plot.caption = element_text(size = 15))
 
 ```
 
@@ -162,6 +133,37 @@ do.call(grid.arrange,c(gs,nrow = 3))
 
 library(factoextra)
 fviz_eig(pca_model)
+
+
+
+# PC scores visualization
+# https://stackoverflow.com/questions/27354734/dplyr-mutate-rowsums-calculations-or-custom-functions
+
+temp = pca_model$x %>% as.data.frame()
+# colMeans(temp)
+
+score = rbind(temp, data.frame(t(colMeans(temp))))
+
+# which(score$score_sum == max(score$score_sum))
+# subject 1931 has the maximum of sum of scores
+
+
+g = ggplot(gather(score[nrow(score),])) + 
+  aes(x = 1:1440,y = value, color = "Average of Principal Component Scores") + 
+  geom_line() + 
+  labs(x = "Principal Component", y = "Principal Component Scores")
+  
+  geom_line(aes(x = 1:nrow(score)/60,
+                y = temp[which(score$score_sum == max(score$score_sum)),]))
+
+g1 = ggplot(data.frame(res_RMSE)) + 
+  aes(x = 1:length(res_RMSE), y = res_RMSE) +
+  geom_line(aes(color = 'Original RMSE Loss'))+
+  # geom_smooth(se = TRUE, method = 'lm')+
+  geom_smooth(se = TRUE, method =  'auto', aes(color = 'LOESS Curve Fitting')) +
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ') + 
+  scale_colour_manual(name="Legend", values = c("blue",'red'))
+
 
 ```
 
@@ -212,17 +214,19 @@ for(i in 1:50){
 load(file = 'CV_50PCs.rda')
 g1 = ggplot(data.frame(res_RMSE)) + 
   aes(x = 1:length(res_RMSE), y = res_RMSE) +
-  geom_line()+
+  geom_line(aes(color = 'Original RMSE Loss'))+
   # geom_smooth(se = TRUE, method = 'lm')+
-  geom_smooth(se = TRUE, method =  'auto',color = 'blue') +
-  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ')
+  geom_smooth(se = TRUE, method =  'auto', aes(color = 'LOESS Curve Fitting')) +
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ') + 
+  scale_colour_manual(name="Legend", values = c("blue",'red'))
 
 g2 = ggplot(data.frame(res_Rsquared)) + 
   aes(x = 1:length(res_Rsquared), y = res_Rsquared) +
-  geom_line()+
+  geom_line(aes(color = 'Original R-squared'))+
   # geom_smooth(se = TRUE, method = 'lm')+
-  geom_smooth(se = TRUE, method =  'auto',color = 'blue') + 
-  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'R-squared')
+  geom_smooth(se = TRUE, method =  'auto', aes(color = 'LOESS Curve Fitting')) + 
+  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'R-squared') +
+  scale_colour_manual(name="Legend", values = c("blue",'red'))
 
 which(res_RMSE==min(res_RMSE))
 which(res_Rsquared==max(res_Rsquared))
