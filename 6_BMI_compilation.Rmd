@@ -144,25 +144,35 @@ temp = pca_model$x %>% as.data.frame()
 
 score = rbind(temp, data.frame(t(colMeans(temp))))
 
-# which(score$score_sum == max(score$score_sum))
-# subject 1931 has the maximum of sum of scores
+# find subject with highest / lowest PC scores
+score_sum = mutate(score,S = rowSums(score))
+# which(score_sum$S == max(score_sum$S))
+# subject 1931 has the highest average of scores
+# 1521 with lowest scores
+
+temp = t(score[c(nrow(score), 1931, 1521),]) %>% as.data.frame()
+
+n = 200
+tmp = temp[1:n,]
+ggplot(tmp, aes(x = 1:n)) + 
+  geom_line(aes(y = tmp[,1], color = "Average of Principal Component Scores")) + 
+  geom_line(aes(y = tmp[,2], color = "Participant with Highest Principal Component scores")) +
+  geom_line(aes(y = tmp[,3], color = 'Participant with Lowest Principal Component scores')) + 
+  labs(x = "Principal Component", y = "Principal Component Scores") +
+  scale_colour_manual(name = 'Legend', values = c('blue','red','green'))
 
 
-g = ggplot(gather(score[nrow(score),])) + 
-  aes(x = 1:1440,y = value, color = "Average of Principal Component Scores") + 
-  geom_line() + 
-  labs(x = "Principal Component", y = "Principal Component Scores")
-  
-  geom_line(aes(x = 1:nrow(score)/60,
-                y = temp[which(score$score_sum == max(score$score_sum)),]))
 
-g1 = ggplot(data.frame(res_RMSE)) + 
-  aes(x = 1:length(res_RMSE), y = res_RMSE) +
-  geom_line(aes(color = 'Original RMSE Loss'))+
-  # geom_smooth(se = TRUE, method = 'lm')+
-  geom_smooth(se = TRUE, method =  'auto', aes(color = 'LOESS Curve Fitting')) +
-  labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ') + 
-  scale_colour_manual(name="Legend", values = c("blue",'red'))
+  # geom_line(aes(x = 1:nrow(score)/60,
+  #               y = temp[which(score$score_sum == max(score$score_sum)),]))
+
+# g1 = ggplot(data.frame(res_RMSE)) + 
+#   aes(x = 1:length(res_RMSE), y = res_RMSE) +
+#   geom_line(aes(color = 'Original RMSE Loss'))+
+#   # geom_smooth(se = TRUE, method = 'lm')+
+#   geom_smooth(se = TRUE, method =  'auto', aes(color = 'LOESS Curve Fitting')) +
+#   labs(x = 'Number of Principal Components Used in Cross-Validation',y = 'Root Mean Square Error ') + 
+#   scale_colour_manual(name="Legend", values = c("blue",'red'))
 
 
 ```
