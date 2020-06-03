@@ -360,6 +360,7 @@ plot(fit,which = 1)
 # Linear regression results
 
 ```{r}
+
 plot(yPred, yTrue)
 
 # MSE
@@ -367,6 +368,8 @@ mean((result[,1]-result[,2])^2)
 
 # cor
 cor(result[,1], result[,2])
+
+summary(fit2)
 ```
 
 
@@ -407,9 +410,9 @@ tab_model(fit,fit2,
 
 
 
-# CNN
 
-# data processing
+
+# DEEP LEARNING data processing
 ```{r}
 load('analyticData.rda')
 library(rnhanesdata)
@@ -454,9 +457,9 @@ MINdata_10080 = MINdata_10080 %>% filter(SEQN %in% SEQN_7days$SEQN)
 save(MINdata,MINdata_1440,MINdata_10080,file='MINdata.rda')
 ```
 
-# CNN model construction
+# CNN 
 ```{r}
-
+rm(list = ls())
 library(keras)
 library(caret)
 load('MINdata.rda')
@@ -486,11 +489,11 @@ ytest = y[!trainIdx]
 
 # we are using univariate time series data so number of feature is 1
 # for multivariate data e.g. activity signal on axis 1, axis 2, axis 3, then number of feature is 3 
-xtrain = array(xtrain, dim = c(nrow(xtrain), dim(xtrain)[2], 1))
-xtest = array(xtest, dim = c(nrow(xtest), dim(xtest)[2], 1))
+xtrain = array(xtrain, dim = c(dim(xtrain)[1], dim(xtrain)[2], 1))
+xtest = array(xtest, dim = c(dim(xtest)[1], dim(xtest)[2], 1))
 
-model = keras_model_sequential() %>%
-  layer_conv_1d(filters = 2^9, kernel_size = 2,
+model_CNN = keras_model_sequential() %>%
+  layer_conv_1d(filters = 2^8, kernel_size = 2,
                input_shape = c(dim(xtrain)[2:3]), activation = "relu") %>%
   layer_max_pooling_1d(pool_size = 2) %>%
   layer_conv_1d(filters = 2^4, kernel_size = 2, activation = "relu") %>%
@@ -500,15 +503,14 @@ model = keras_model_sequential() %>%
   # layer_dropout(0.5) %>%
   layer_dense(units = 1, activation = "linear")
 
-# summary(model)
 
-model %>% compile(
+model_CNN %>% compile(
  loss = "mse",
  optimizer = "adam",
  metrics = list("mean_absolute_error")
 )
 
-history = model %>% fit(
+history = model_CNN %>% fit(
  xtrain,
  ytrain,
  epochs = 20,
@@ -517,9 +519,13 @@ history = model %>% fit(
  verbose = 1
 )
 
-yPred = model %>% predict(xtest)
+yPred = model_CNN %>% predict(xtest)
 ```
 
+```{r}
+model_CNN %>% save_model_hdf5("model_CNN.h5")
+model_CNN <- load_model_hdf5("model_CNN.h5")
+```
 
 ```{r}
 plot(yPred, ytest)
@@ -527,7 +533,12 @@ plot(yPred, ytest)
 mean((yPred-ytest)^2)
 
 cor(yPred,ytest)
+
+summary(model_CNN)
 ```
+
+
+
 
 
 
@@ -535,7 +546,149 @@ cor(yPred,ytest)
 # garbage code
 
 
-## CNN covariates
+
+# CNN + LSTM
+
+```{r}
+rm(list = ls())
+load('MINdata.rda')
+
+
+MINdata_1440 = as.data.frame(lapply(MINdata_1440, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
+set.seed(000)
+trainIdx = sample(c(TRUE, FALSE), dim(MINdata_1440)[1], replace = TRUE, prob = c(.7, .3))
+
+
+y = MINdata_1440$BMI 
+x = MINdata_1440 %>% select(-BMI) %>% select(-SEQN)
+
+ytrain = y[trainIdx]
+xtrain = x[trainIdx, ] %>% scale()
+
+mns = attr(xtrain, "scaled:center")
+sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx]
+
+
+xtrain = array(xtrain, dim = c(dim(xtrain)[1], dim(xtrain)[2], 1))
+xtest = array(xtest, dim = c(dim(xtest)[1], dim(xtest)[2], 1))
+
+
+model_custom = keras_model_sequential() %>%
+  layer_conv_1d(filters = 2^8, kernel_size = 2,
+               input_shape = c(dim(xtrain)[2:3]), activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_lstm(units = 2^3) %>%
+  layer_dense(1, activation = 'linear')
+
+model_custom %>% compile(
+ loss = "mse",
+ optimizer = "adam",
+ metrics = list("mean_absolute_error")
+)
+
+history = model_custom %>% fit(
+ xtrain,
+ ytrain,
+ epochs = 20,
+ validation_split = 0.2,
+ verbose = 1
+)
+
+yPred = model_custom %>% predict(xtest)
+```
+
+```{r}
+model_custom %>% save_model_hdf5("model_custom.h5")
+model_custom <- load_model_hdf5("model_custom.h5")
+```
+
+```{r}
+plot(yPred, ytest)
+
+mean((yPred-ytest)^2)
+
+cor(yPred,ytest)
+
+summary(model_custom)
+```
+
+# LSTM
+
+```{r}
+rm(list = ls())
+load('MINdata.rda')
+MINdata_1440 = as.data.frame(lapply(MINdata_1440, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
+set.seed(000)
+trainIdx = sample(c(TRUE, FALSE), dim(MINdata_1440)[1], replace = TRUE, prob = c(.7, .3))
+
+
+y = MINdata_1440$BMI 
+x = MINdata_1440 %>% select(-BMI) %>% select(-SEQN)
+
+ytrain = y[trainIdx]
+xtrain = x[trainIdx, ] %>% scale()
+
+mns = attr(xtrain, "scaled:center")
+sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx]
+
+
+tstep = 1
+# we are using univariate time series data so number of feature is 1
+# for multivariate data e.g. activity signal on axis 1, axis 2, axis 3, then number of feature is 3
+# [samples / batch size, tstep, number of features] 
+xtrain = array(xtrain, dim = c(dim(xtrain)[1], tstep, 1))
+xtest = array(xtest, dim = c(dim(xtest)[1], tstep, 1))
+
+
+model_LSTM = keras_model_sequential() %>%
+  layer_lstm(input_shape = c(dim(xtrain)[2:3]),
+             units = 2^8, activation = 'relu') %>% 
+  # layer_lstm(units = 2^4, activation = 'relu') %>%
+  layer_dense(2^2) %>%
+  # layer_dropout(0.25) %>%
+  layer_dense(units = 1, activation = "linear")
+
+
+model_LSTM %>% compile(
+ loss = "mse",
+ optimizer = "adam",
+ metrics = list("mean_absolute_error")
+)
+
+history = model_LSTM %>% fit(
+ xtrain,
+ ytrain,
+ epochs = 10,
+ validation_split = 0.2,
+ verbose = 1
+)
+
+yPred = model_LSTM %>% predict(xtest)
+```
+
+```{r}
+model_LSTM %>% save_model_hdf5("model_LSTM.h5")
+model_LSTM <- load_model_hdf5("model_LSTM.h5")
+```
+
+```{r}
+plot(yPred, ytest)
+
+mean((yPred-ytest)^2)
+
+cor(yPred,ytest)
+
+summary(model_LSTM)
+```
+
+
+## CNN with separate covariates 
 ```{r}
 library(keras)
 library(caret)
