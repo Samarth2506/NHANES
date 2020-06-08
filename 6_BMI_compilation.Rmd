@@ -138,28 +138,28 @@ fviz_eig(pca_model)
 
 # PC scores visualization
 # https://stackoverflow.com/questions/27354734/dplyr-mutate-rowsums-calculations-or-custom-functions
-
-temp = pca_model$x %>% as.data.frame()
-# colMeans(temp)
-
-score = rbind(temp, data.frame(t(colMeans(temp))))
-
-# find subject with highest / lowest PC scores
-score_sum = mutate(score,S = rowSums(score))
-# which(score_sum$S == max(score_sum$S))
-# subject 1931 has the highest average of scores
-# 1521 with lowest scores
-
-temp = t(score[c(nrow(score), 1931, 1521),]) %>% as.data.frame()
-
-n = 100
-tmp = temp[1:n,]
-ggplot(tmp, aes(x = 1:n)) + 
-  geom_line(aes(y = tmp[,1], color = "Average of Principal Component Scores")) + 
-  geom_line(aes(y = tmp[,2], color = "Participant with Highest Average of Principal Component scores")) +
-  geom_line(aes(y = tmp[,3], color = 'Participant with Lowest Average of Principal Component scores')) + 
-  labs(x = "Principal Component", y = "Principal Component Scores") +
-  scale_colour_manual(name = 'Legend', values = c('blue','red','green'))
+# 
+# temp = pca_model$x %>% as.data.frame()
+# # colMeans(temp)
+# 
+# score = rbind(temp, data.frame(t(colMeans(temp))))
+# 
+# # find subject with highest / lowest PC scores
+# score_sum = mutate(score,S = rowSums(score))
+# # which(score_sum$S == max(score_sum$S))
+# # subject 1931 has the highest average of scores
+# # 1521 with lowest scores
+# 
+# temp = t(score[c(nrow(score), 1931, 1521),]) %>% as.data.frame()
+# 
+# n = 100
+# tmp = temp[1:n,]
+# ggplot(tmp, aes(x = 1:n)) + 
+#   geom_line(aes(y = tmp[,1], color = "Average of Principal Component Scores")) + 
+#   geom_line(aes(y = tmp[,2], color = "Participant with Highest Average of Principal Component scores")) +
+#   geom_line(aes(y = tmp[,3], color = 'Participant with Lowest Average of Principal Component scores')) + 
+#   labs(x = "Principal Component", y = "Principal Component Scores") +
+#   scale_colour_manual(name = 'Legend', values = c('blue','red','green'))
 
 
 
@@ -538,9 +538,15 @@ summary(model_CNN)
 ```
 
 
+# to do 
+```{r}
+# CNN: separate covariates and time-series and then concatenate
 
 
+```
 
+
+# CNN with PC scores
 
 
 # garbage code
