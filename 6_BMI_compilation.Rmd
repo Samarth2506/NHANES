@@ -559,11 +559,13 @@ summary(model_CNN)
 ```
 
 
-# to do 
+# CNN_2
 ```{r}
 # CNN: separate covariates and time-series and then concatenate
 
 rm(list = ls())
+library(tidyverse)
+library(reticulate)
 library(keras)
 library(caret)
 load('MINdata.rda')
@@ -588,52 +590,94 @@ xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
 ytest = y[!trainIdx]
 
 
-
 # we are using univariate time series data so number of feature is 1
 # for multivariate data e.g. activity signal on axis 1, axis 2, axis 3, then number of feature is 3 
 xtrain = array(xtrain, dim = c(dim(xtrain)[1], dim(xtrain)[2], 1))
 xtest = array(xtest, dim = c(dim(xtest)[1], dim(xtest)[2], 1))
 
+# 1440 minites, feature = 1
+time_input = layer_input(shape = c(1440,1),
+                         name = 'input_time')
+
+time_output = time_input %>%
+  layer_conv_1d(filters = 2^8, kernel_size = 2, activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_conv_1d(filters = 2^4, kernel_size = 2, activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_flatten()  %>%
+  layer_dense(units = 2^4, activation = "relu") 
+
+  
+covariates_input = layer_input(shape = c(3,1),
+                               name = 'input_covariates')
+
+covariates_output = covariates_input %>%
+  layer_reshape(target_shape = 3)
+
+
+concatenate_layer = layer_concatenate(c(time_output,covariates_output)) %>%
+  layer_dense(units = 1, activation = 'linear')
+
+model_CNN = keras_model(
+  inputs = c(time_input,covariates_input),
+  outputs = concatenate_layer
+)
+
+model_CNN %>% compile(
+ loss = "mse",
+ optimizer = "adam",
+ metrics = list("mean_absolute_error")
+)
+
+# kerasR::plot_model(model_CNN,
+#                    # to_file = "model.png",
+#                    show_shapes = TRUE,
+#   show_layer_names = TRUE)
 
 
 
-# define two sets of inputs
-inputA = Input(shape=(32,))
-inputB = Input(shape=(128,))
-# the first branch operates on the first input
-x = Dense(8, activation="relu")(inputA)
-x = Dense(4, activation="relu")(x)
-x = Model(inputs=inputA, outputs=x)
-# the second branch opreates on the second input
-y = Dense(64, activation="relu")(inputB)
-y = Dense(32, activation="relu")(y)
-y = Dense(4, activation="relu")(y)
-y = Model(inputs=inputB, outputs=y)
-# combine the output of the two branches
-combined = concatenate([x.output, y.output])
-# apply a FC layer and then a regression prediction on the
-# combined outputs
-z = Dense(2, activation="relu")(combined)
-z = Dense(1, activation="linear")(z)
-# our model will accept the inputs of the two branches and
-# then output a single value
-model = Model(inputs=[x.input, y.input], outputs=z)
+history = model_CNN %>% fit(
+  x = list(input_time = array(xtrain[,1:1440,1],dim=c(9688,1440,1)),
+           input_covariates = array(xtrain[,1441:1443,1],dim=c(9688,3,1))),
+  y = ytrain,
+  epochs = 15,
+  validation_split = 0.2,
+  batch_size = 32,
+  verbose = 1
+)
+
+yPred = model_CNN %>% predict(
+  list(array(xtest[1:4171,1:1440,1],dim=c(4171,1440,1)),
+       array(xtest[1:4171,1441:1443,1],dim=c(4171,3,1)))
+)
 
 
 
+```
 
+```{r}
+model_CNN %>% save_model_hdf5("model_CNN.h5")
+model_CNN <- load_model_hdf5("model_CNN.h5")
+```
 
+```{r}
+plot(yPred, ytest)
 
+mean((yPred-ytest)^2)
+
+cor(yPred,ytest)
+
+summary(model_CNN)
 ```
 
 
 
 
 
-
-
-
-# CNN with PC scores
+# CNN using PC scores
+```{r}
+load(file = 'analyticData.rda')
+```
 
 
 # garbage code
