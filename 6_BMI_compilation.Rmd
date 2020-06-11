@@ -134,6 +134,10 @@ ggcorrplot(cor(y_cor),
 ```
 
 
+
+
+
+
 # PCA results visualization
 ```{r}
 rm(list = ls())
@@ -153,7 +157,7 @@ temp = pca_model$rotation %>% data.frame()
 
 gs = lapply(1:8, function(i) {
   ggplot(temp) + 
-    aes(x = 1:nrow(temp)/60,y = unlist(temp[,i])) + 
+    aes(x = 1:nrow(temp)/60,y = unlist(temp[,i]) %>% abs) + 
     geom_line() +
     labs(x = "Time of Day", y = paste0("Loadings on PC",i)) +
     theme(axis.title.y = element_text(size = rel(0.9)))
@@ -185,7 +189,21 @@ pcscores_lowbmi = cbind('SEQN' = BMI_id_low,pcscores_lowbmi) %>% as.data.frame()
 pcscores_highbmi = scale(BMI_high, pca_model$center, pca_model$scale) %*% pca_model$rotation
 pcscores_highbmi = cbind('SEQN' = BMI_id_high,pcscores_highbmi) %>% as.data.frame()
 
+# box plot
 
+pcscores = rbind(cbind(pcscores_highbmi, BMI = 'high_BMI'), 
+                 cbind(pcscores_lowbmi, BMI = 'low_BMI'))
+gs = lapply(1:3, function(i) {
+  ggplot(pcscores) +
+    geom_boxplot(aes(x = BMI, y = pcscores[,paste0('PC',i)] %>% unlist %>% abs)) +
+    labs(y = paste0('Absolute PC',i,' Scores'))
+})
+
+do.call(grid.arrange,c(gs,nrow = 1))
+
+
+
+# subject score + abs(pc scores)
 
 gs = lapply(1:3, function(i) {
   temp_high = MINdata %>% filter(SEQN %in% BMI_id_high) %>% select(-SEQN)  + abs(pcscores_highbmi[,paste0('PC',i)])
@@ -202,13 +220,12 @@ return(
 )
 })
 
-# grid.arrange(grobs = gs,nrow = 3)
 do.call(grid.arrange,c(gs,nrow = 3))
 
 
 
 
-# subject scores + abs(PC scores)
+# scale = F
 pca_model = prcomp(MINdata %>% select(-SEQN),
                      scale. = F)
 
@@ -245,7 +262,6 @@ return(
 )
 })
 
-# grid.arrange(grobs = gs,nrow = 3)
 do.call(grid.arrange,c(gs,nrow = 3))
 
 ```
@@ -534,76 +550,7 @@ save(MINdata,MINdata_1440,MINdata_10080,file='MINdata.rda')
 
 
 
-# NN using PC scores and covariates
-```{r}
-rm(list = ls())
-library(tidyverse)
-library(reticulate)
-library(keras)
-library(caret)
-load(file = 'analyticData.rda')
 
-
-analyticData = as.data.frame(lapply(analyticData, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
-
-set.seed(000)
-trainIdx = sample(c(TRUE, FALSE), dim(analyticData)[1], replace = TRUE, prob = c(.7, .3))
-
-# y = log(MINdata$BMI + 1)
-y = analyticData$BMI
-x = analyticData %>% select(-BMI) %>% select(-SEQN)
-
-ytrain = y[trainIdx]
-xtrain = x[trainIdx, ] %>% scale()
-
-mns = attr(xtrain, "scaled:center")
-sds = attr(xtrain, "scaled:scale")
-
-xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
-ytest = y[!trainIdx]
-
-
-
-xtrain = array(xtrain, dim = c(dim(xtrain)[1], dim(xtrain)[2], 1))
-xtest = array(xtest, dim = c(dim(xtest)[1], dim(xtest)[2], 1))
-
-model = keras_model_sequential() %>%
-  layer_dense(input_shape = dim(xtrain)[2],
-              units = 2^8, activation = 'relu') %>%
-  layer_dense(units = 2^4, activation = 'relu') %>%
-  layer_dense(units = 1, activation = 'linear')
-
-
-
-model %>% compile(
- loss = "mse",
- optimizer = "adam",
- metrics = list("mean_absolute_error")
-)
-
-history = model %>% fit(
- xtrain,
- ytrain,
- epochs = 20,
- validation_split = 0.2,
- # batch_size = 100,
- verbose = 1
-)
-
-yPred = model %>% predict(xtest)
-```
-
-
-
-```{r}
-plot(yPred, ytest)
-
-mean((yPred-ytest)^2)
-
-cor(yPred,ytest)
-
-summary(model)
-```
 
 
 # CNN 
@@ -801,7 +748,110 @@ summary(model_CNN)
 
 
 
+# CNN using PC scores and covariates
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(reticulate)
+library(keras)
+library(caret)
+load(file = 'analyticData.rda')
 
+
+analyticData = as.data.frame(lapply(analyticData, function (x) if (is.factor(x)) unclass(x) %>% as.numeric else x))
+
+set.seed(000)
+trainIdx = sample(c(TRUE, FALSE), dim(analyticData)[1], replace = TRUE, prob = c(.7, .3))
+
+# y = log(MINdata$BMI + 1)
+y = analyticData$BMI
+x = analyticData %>% select(-BMI) %>% select(-SEQN)
+
+ytrain = y[trainIdx]
+xtrain = x[trainIdx, ] %>% scale()
+
+mns = attr(xtrain, "scaled:center")
+sds = attr(xtrain, "scaled:scale")
+
+xtest = x[!trainIdx, ] %>% scale(center = mns, scale = sds)
+ytest = y[!trainIdx]
+
+
+
+xtrain = array(xtrain, dim = c(dim(xtrain)[1], dim(xtrain)[2], 1))
+xtest = array(xtest, dim = c(dim(xtest)[1], dim(xtest)[2], 1))
+
+
+
+pc_input = layer_input(shape = c(1440,1),
+                         name = 'input_pc')
+
+pc_output = pc_input %>%
+  layer_conv_1d(filters = 2^8, kernel_size = 2, activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_conv_1d(filters = 2^4, kernel_size = 2, activation = "relu") %>%
+  layer_max_pooling_1d(pool_size = 2) %>%
+  layer_flatten()  %>%
+  layer_dense(units = 2^4, activation = "relu") 
+
+  
+covariates_input = layer_input(shape = c(3,1),
+                               name = 'input_covariates')
+
+covariates_output = covariates_input %>%
+  layer_reshape(target_shape = 3)
+
+
+concatenate_layer = layer_concatenate(c(pc_output,covariates_output)) %>%
+  layer_dense(units = 1, activation = 'linear')
+
+model_CNN = keras_model(
+  inputs = c(pc_input,covariates_input),
+  outputs = concatenate_layer
+)
+
+model_CNN %>% compile(
+ loss = "mse",
+ optimizer = "adam",
+ metrics = list("mean_absolute_error")
+)
+
+# kerasR::plot_model(model_CNN,
+#                    # to_file = "model.png",
+#                    show_shapes = TRUE,
+#   show_layer_names = TRUE)
+
+
+
+history = model_CNN %>% fit(
+  x = list(input_pc = array(xtrain[,1:1440,1],dim=c(dim(xtrain)[1],1440,1)),
+           input_covariates = array(xtrain[,1441:1443,1],dim=c(dim(xtrain)[1],3,1))),
+  y = ytrain,
+  epochs = 15,
+  validation_split = 0.2,
+  # batch_size = 32,
+  verbose = 1
+)
+
+yPred = model_CNN %>% predict(
+  list(array(xtest[,1:1440,1],dim=c(dim(xtest)[1],1440,1)),
+       array(xtest[,1441:1443,1],dim=c(dim(xtest)[1],3,1)))
+)
+
+
+```
+
+
+
+```{r}
+plot(yPred, ytest)
+
+mean((yPred-ytest)^2)
+
+cor(yPred,ytest)
+
+summary(model_CNN)
+```
 
 # LSTM muti-inputs
 
