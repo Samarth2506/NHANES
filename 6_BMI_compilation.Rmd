@@ -34,8 +34,9 @@ flags_good_D <- Flags_D[keep_inx,]
 
 
 MIN_name = grep('MIN',colnames(accel_good_D),value = T)
-MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>%
-  group_by(SEQN) %>% summarise_each(funs(mean)) %>% as.data.frame() %>% na.omit()
+MINdata = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% 
+  group_by(SEQN) %>% summarise_all("mean") %>% as.data.frame() %>% na.omit()
+
 
 
 SEQN_7days = data.frame(SEQN = accel_good_D[,'SEQN'],accel_good_D[,MIN_name] * flags_good_D[,MIN_name]) %>% group_by(SEQN) %>% summarise(num = n()) %>% filter(num==7) %>% select(SEQN)
@@ -170,94 +171,42 @@ do.call(grid.arrange,c(gs,nrow = 3))
 
 
 
-
-
-
-# subject scores + abs(PC scores)
-low_BMI_thre = quantile(analyticData$BMI,probs = c(0.2,0.8))[1]
-high_BMI_thre = quantile(analyticData$BMI,probs = c(0.2,0.8))[2]
-
-BMI_id_low = analyticData$SEQN[which(analyticData$BMI < low_BMI_thre)]
-BMI_id_high = analyticData$SEQN[which(analyticData$BMI > high_BMI_thre)]
-
-BMI_low = MINdata %>% filter(SEQN %in% BMI_id_low) %>% select(-SEQN)
-BMI_high = MINdata %>% filter(SEQN %in% BMI_id_high) %>% select(-SEQN)
-
-pcscores_lowbmi = scale(BMI_low, pca_model$center, pca_model$scale) %*% pca_model$rotation
-pcscores_lowbmi = cbind('SEQN' = BMI_id_low,pcscores_lowbmi) %>% as.data.frame()
-
-pcscores_highbmi = scale(BMI_high, pca_model$center, pca_model$scale) %*% pca_model$rotation
-pcscores_highbmi = cbind('SEQN' = BMI_id_high,pcscores_highbmi) %>% as.data.frame()
-
-# box plot
-
-pcscores = rbind(cbind(pcscores_highbmi, BMI = 'high_BMI'), 
-                 cbind(pcscores_lowbmi, BMI = 'low_BMI'))
-gs = lapply(1:3, function(i) {
-  ggplot(pcscores) +
-    geom_boxplot(aes(x = BMI, y = pcscores[,paste0('PC',i)] %>% unlist %>% abs)) +
-    labs(y = paste0('Absolute PC',i,' Scores'))
-})
-
-do.call(grid.arrange,c(gs,nrow = 1))
-
-
-
-# subject score + abs(pc scores)
-
-gs = lapply(1:3, function(i) {
-  temp_high = MINdata %>% filter(SEQN %in% BMI_id_high) %>% select(-SEQN)  + abs(pcscores_highbmi[,paste0('PC',i)])
-  temp_high = temp_high  %>% colMeans() %>% as.data.frame()
-  
-  temp_low = MINdata %>% filter(SEQN %in% BMI_id_low) %>% select(-SEQN) + abs(pcscores_lowbmi[,paste0('PC',i)])
-  temp_low = temp_low  %>% colMeans() %>% as.data.frame()
-return(
-  ggplot() +
-    geom_line(data = temp_high, aes(x = 1:nrow(temp_high)/60, y = temp_high[1] %>% unlist(), color = 'Scores of Subjects with High BMI(>30)')) + 
-    geom_line(data = temp_low, aes(x = 1:nrow(temp_low)/60, y = temp_low[1] %>% unlist(), color = 'Scores of Subjects with Low BMI(<20)')) + 
-    labs(x = "Time of Day", y = paste0("Subject Scores + PC",i," Scores")) +
-    scale_colour_manual(name="Legend", values = c("red",'blue'))
-)
-})
-
-do.call(grid.arrange,c(gs,nrow = 3))
+# # box plot
+# 
+# pcscores = rbind(cbind(pcscores_highbmi, BMI = 'high_BMI'), 
+#                  cbind(pcscores_lowbmi, BMI = 'low_BMI'))
+# gs = lapply(1:3, function(i) {
+#   ggplot(pcscores) +
+#     geom_boxplot(aes(x = BMI, y = pcscores[,paste0('PC',i)] %>% unlist %>% abs)) +
+#     labs(y = paste0('Absolute PC',i,' Scores'))
+# })
+# 
+# do.call(grid.arrange,c(gs,nrow = 1))
+# 
 
 
 
 
 # scale = F
-pca_model = prcomp(MINdata %>% select(-SEQN),
+if(F){
+  pca_model = prcomp(MINdata %>% select(-SEQN),
                      scale. = F)
-
-
-low_BMI_thre = quantile(analyticData$BMI,probs = c(0.2,0.8))[1]
-high_BMI_thre = quantile(analyticData$BMI,probs = c(0.2,0.8))[2]
-
-BMI_id_low = analyticData$SEQN[which(analyticData$BMI < low_BMI_thre)]
-BMI_id_high = analyticData$SEQN[which(analyticData$BMI > high_BMI_thre)]
-
-BMI_low = MINdata %>% filter(SEQN %in% BMI_id_low) %>% select(-SEQN)
-BMI_high = MINdata %>% filter(SEQN %in% BMI_id_high) %>% select(-SEQN)
-
-pcscores_lowbmi = scale(BMI_low, pca_model$center, pca_model$scale) %*% pca_model$rotation
-pcscores_lowbmi = cbind('SEQN' = BMI_id_low,pcscores_lowbmi) %>% as.data.frame()
-
-pcscores_highbmi = scale(BMI_high, pca_model$center, pca_model$scale) %*% pca_model$rotation
-pcscores_highbmi = cbind('SEQN' = BMI_id_high,pcscores_highbmi) %>% as.data.frame()
-
-
+  save(pca_model,file= 'pca_model_unscale.rda')
+}
+load(file = 'pca_model_unscale.rda')
+pcscore = data.frame(SEQN = MINdata$SEQN, pca_model$x)
 
 gs = lapply(1:3, function(i) {
-  temp_high = MINdata %>% filter(SEQN %in% BMI_id_high) %>% select(-SEQN)  + abs(pcscores_highbmi[,paste0('PC',i)])
-  temp_high = temp_high  %>% colMeans() %>% as.data.frame()
-  
-  temp_low = MINdata %>% filter(SEQN %in% BMI_id_low) %>% select(-SEQN) + abs(pcscores_lowbmi[,paste0('PC',i)])
-  temp_low = temp_low  %>% colMeans() %>% as.data.frame()
+  id_high = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == max(pcscore[,paste0('PC',i)]))]
+  id_low = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == min(pcscore[,paste0('PC',i)]))]
+  tmp_high = MINdata %>% filter(SEQN %in% id_high) %>% select(-SEQN) %>% t %>% as.data.frame()
+  tmp_low = MINdata %>% filter(SEQN %in% id_low) %>% select(-SEQN) %>% t %>% as.data.frame()
 return(
   ggplot() +
-    geom_line(data = temp_high, aes(x = 1:nrow(temp_high)/60, y = temp_high[1] %>% unlist(), color = 'Scores of Subjects with High BMI(>30)')) + 
-    geom_line(data = temp_low, aes(x = 1:nrow(temp_low)/60, y = temp_low[1] %>% unlist(), color = 'Scores of Subjects with Low BMI(<20)')) + 
-    labs(x = "Time of Day", y = paste0("Subject Scores + PC",i," Scores")) +
+    geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0( 'Subject with the Highest PC',i,' Scores'))) + 
+    geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest PC',i,' Scores'))) + 
+    labs(x = "Time of Day", y = paste0("Averaged Daily Activity")) +
+    theme(axis.title=element_text(size=10)) + 
     scale_colour_manual(name="Legend", values = c("red",'blue'))
 )
 })
