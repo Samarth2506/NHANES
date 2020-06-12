@@ -1,0 +1,61 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r fig.width= 10}
+
+rm(list = ls())
+library(gridExtra)
+library(tidyverse)
+library(grid)
+load('analyticData.rda')
+
+
+# scale = F
+if(F){
+  pca_model = prcomp(MINdata %>% select(-SEQN),
+                     scale. = F)
+  save(pca_model,file= 'pca_model_unscale.rda')
+}
+
+
+
+load(file = 'pca_model_unscale.rda')
+pcscore = data.frame(SEQN = MINdata$SEQN, pca_model$x)
+
+gs = lapply(1:3, function(i) {
+  id_high = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == max(pcscore[,paste0('PC',i)]))]
+  id_low = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == min(pcscore[,paste0('PC',i)]))]
+  tmp_high = MINdata %>% filter(SEQN %in% id_high) %>% select(-SEQN) %>% t %>% as.data.frame()
+  tmp_low = MINdata %>% filter(SEQN %in% id_low) %>% select(-SEQN) %>% t %>% as.data.frame()
+  tmp_average = MINdata %>% select(-SEQN) %>% colMeans() %>% as.data.frame()
+return(
+  ggplot() +
+    geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0('Subject with the Highest PC',i,' Scores'))) +
+    geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest PC',i,' Scores'))) +
+    geom_line(data = tmp_average, aes(x = 1:1440/60, y =  unlist(tmp_average), color = paste0('Averaged Subject Scores')))  +
+    labs(x='',y= paste0('PC',i)) +
+    scale_colour_manual(name="", values = c('black','red','green'))
+)
+})
+grid_arrange_shared_legend <- function(...) {
+    plots <- list(...)
+    g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
+    legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+    lheight <- sum(legend$height)
+    grid.arrange(
+        do.call(arrangeGrob, lapply(plots, function(x)
+            x + theme(legend.position="none"))),
+        legend,
+        ncol = 1,
+        left = 'Averaged Daily Activity Scores',
+        # bottom = 'Time of Day',
+        heights = grid::unit.c(unit(1, "npc") - lheight, lheight)
+        )
+}
+
+do.call(grid_arrange_shared_legend,gs)
+```
+```
+
