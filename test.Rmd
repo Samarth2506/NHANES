@@ -1,7 +1,7 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 ```{r fig.width= 10}
 
@@ -32,9 +32,9 @@ gs = lapply(1:3, function(i) {
   tmp_average = MINdata %>% select(-SEQN) %>% colMeans() %>% as.data.frame()
 return(
   ggplot() +
-    geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0('Subject with the Highest PC',i,' Scores'))) +
-    geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest PC',i,' Scores'))) +
-    geom_line(data = tmp_average, aes(x = 1:1440/60, y =  unlist(tmp_average), color = paste0('Averaged Subject Scores')))  +
+    geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0('Subject with the Highest Principal Component Score'))) +
+    geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest Pincipal Component Score'))) +
+    geom_line(data = tmp_average, aes(x = 1:1440/60, y =  unlist(tmp_average), color = paste0('Averaged Subject Score')))  +
     labs(x='',y= paste0('PC',i)) +
     scale_colour_manual(name="", values = c('black','red','green'))
 )
