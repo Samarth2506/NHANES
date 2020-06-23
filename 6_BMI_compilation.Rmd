@@ -157,12 +157,15 @@ fviz_eig(pca_model)
 # eigenvectors
 temp = pca_model$rotation %>% data.frame()
 
-gs = lapply(1:8, function(i) {
+gs = lapply(1:3, function(i) {
   ggplot(temp) + 
     aes(x = 1:nrow(temp)/60,y = unlist(temp[,i]) %>% abs) + 
     geom_line() +
     labs(x = "Time of Day", y = paste0("Loadings on PC",i)) +
-    theme(axis.title.y = element_text(size = rel(0.9)))
+    theme(
+      plot.margin = unit(c(1, 0, 0, 0), "cm")
+      # axis.title.y = element_text(size = rel(1)),
+          )
 })
 
 do.call(grid.arrange,c(gs,nrow = 3))
@@ -208,7 +211,7 @@ grid_arrange_shared_legend <- function(...) {
             x + theme(legend.position="none"))),
         legend,
         ncol = 1,
-        left = 'Averaged Daily Activity Scores',
+        # left = 'Averaged Daily Activity Count',
         # bottom = 'Time of Day',
         heights = grid::unit.c(unit(1, "npc") - lheight, lheight)
         )
