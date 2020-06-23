@@ -197,8 +197,11 @@ return(
     geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0('Subject with the Highest Pincipal Component Scores'))) +
     geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest Principal Component Scores'))) +
     geom_line(data = tmp_average, aes(x = 1:1440/60, y =  unlist(tmp_average), color = paste0('Averaged Subject Scores')))  +
-    labs(x='',y= paste0('PC',i)) +
-    scale_colour_manual(name="", values = c('black','red','green'))
+    # labs(x='',y= paste0('PC',i)) +
+    labs(x = '', y ='') +
+    # theme(axis.title.y = element_text(size = rel(2))) +
+    scale_colour_manual(name="", values = c('black','red','green')) + 
+    scale_size_manual(values = 2)
 )
 })
 grid_arrange_shared_legend <- function(...) {
