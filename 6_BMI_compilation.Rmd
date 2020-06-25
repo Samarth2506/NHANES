@@ -184,7 +184,7 @@ if(F){
 
 
 load(file = 'pca_model_unscale.rda')
-pcscore = data.frame(SEQN = MINdata$SEQN, pca_model$x)
+pcscore = data.frame(SEQN = MINdata$SEQN, pca_model$x %>% abs)
 
 gs = lapply(1:3, function(i) {
   id_high = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == max(pcscore[,paste0('PC',i)]))]
