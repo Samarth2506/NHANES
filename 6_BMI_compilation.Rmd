@@ -163,7 +163,7 @@ gs = lapply(1:3, function(i) {
     geom_line() +
     labs(x = "", y = paste0("PC",i)) +
     theme(
-      plot.margin = unit(c(0.5, 0.5, 0, 0), "cm"),
+      plot.margin = unit(c(0, 0.1, 0, 0), "cm"),
       axis.title.y = element_text(size = rel(1.2))
           )
 })
@@ -189,22 +189,32 @@ pcscore = data.frame(SEQN = MINdata$SEQN, pca_model$x %>% abs)
 gs = lapply(1:3, function(i) {
   id_high = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == max(pcscore[,paste0('PC',i)]))]
   id_low = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == min(pcscore[,paste0('PC',i)]))]
+  id_25 = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == quantile(pcscore[,paste0('PC',i)],c(0.25,0.5,0.75),type = 3)[1])]
+  id_50 = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == quantile(pcscore[,paste0('PC',i)],c(0.25,0.5,0.75),type = 3)[2])]
+  id_75 = pcscore$SEQN[which(pcscore[,paste0('PC',i)] == quantile(pcscore[,paste0('PC',i)],c(0.25,0.5,0.75),type = 3)[3])]  
   tmp_high = MINdata %>% filter(SEQN %in% id_high) %>% select(-SEQN) %>% t %>% as.data.frame()
   tmp_low = MINdata %>% filter(SEQN %in% id_low) %>% select(-SEQN) %>% t %>% as.data.frame()
-  tmp_average = MINdata %>% select(-SEQN) %>% colMeans() %>% as.data.frame()
+  # tmp_25 = MINdata %>% filter(SEQN %in% id_25) %>% select(-SEQN) %>% t %>% as.data.frame()
+  tmp_50 = MINdata %>% filter(SEQN %in% id_50) %>% select(-SEQN) %>% t %>% as.data.frame()
+  # tmp_75 = MINdata %>% filter(SEQN %in% id_75) %>% select(-SEQN) %>% t %>% as.data.frame()
 return(
   ggplot() +
-    geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0('Subject with the Highest Pincipal Component Scores'))) +
-    geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest Principal Component Scores'))) +
-    geom_line(data = tmp_average, aes(x = 1:1440/60, y =  unlist(tmp_average), color = paste0('Averaged Subject Scores')))  +
-    labs(x='',y= paste0('PC',i)) +
+    geom_line(data = tmp_high, aes(x = 1:1440/60, y =  unlist(tmp_high), color = paste0('Subject with the Highest PC Scores'))) +
+    geom_line(data = tmp_low, aes(x = 1:1440/60, y = unlist(tmp_low), color = paste0('Subject with the Lowest PC Scores'))) +
+    # geom_line(data = tmp_25, aes(x = 1:1440/60, y =  unlist(tmp_25), color = paste0('Subject with the 25th percentile of PC Scores')))  +
+    geom_line(data = tmp_50, aes(x = 1:1440/60, y =  unlist(tmp_50), color = paste0('Subject with the 50th percentile of PC Scores')))  +
+    # geom_line(data = tmp_75, aes(x = 1:1440/60, y =  unlist(tmp_75), color = paste0('Subject with the 75th percentile of PC Scores')))  +
+    labs(x='',
+         y= paste0('PC',i),
+         fill = "") +
     # labs(x = '', y ='') +
     theme(
-      plot.margin = unit(c(0.5, 0.5, 0, 0), "cm"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = rel(0.7)),
+      plot.margin = unit(c(0, 0.1, 0, 0), "cm"),
       axis.title.y = element_text(size = rel(1.2))
-          ) +
-    scale_colour_manual(name="", 
-                        values = c('black','red','green'))
+          )
+    # scale_colour_manual(name="",values = c('black','red','green'))
 )
 })
 grid_arrange_shared_legend <- function(...) {
