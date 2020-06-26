@@ -859,13 +859,11 @@ xtrain = array(xtrain, dim = c(dim(xtrain)[1], dim(xtrain)[2], 1))
 xtest = array(xtest, dim = c(dim(xtest)[1], dim(xtest)[2], 1))
 
 
-# 1440 minutes, feature = 1
 time_input = layer_input(shape = c(1440,1),
                          name = 'input_time')
 
 time_output = time_input %>%
-  layer_lstm(units = 2^8, activation = 'relu') %>% 
-  layer_dense(units = 2^4, activation = 'linear') %>%
+  layer_lstm(units = 1, activation = 'relu', input_shape = c(1440,1)) %>% 
   layer_batch_normalization()
 
 covariates_input = layer_input(shape = c(3,1),
@@ -898,8 +896,8 @@ model_LSTM %>% compile(
 
 
 history = model_LSTM %>% fit(
-  x = list(input_time = array(xtrain[,1:1440,1],dim=c(9688,1440,1)),
-           input_covariates = array(xtrain[,1441:1443,1],dim=c(9688,3,1))),
+  x = list(input_time = array(xtrain[,1:1440,1],dim=c(dim(xtrain)[1],1440,1)),
+           input_covariates = array(xtrain[,1441:1443,1],dim=c(dim(xtrain)[1],3,1))),
   y = ytrain,
   epochs = 15,
   validation_split = 0.2,
